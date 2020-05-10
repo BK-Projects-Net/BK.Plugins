@@ -14,12 +14,12 @@ namespace BK.Plugins.MouseHook.Core
 		public readonly DateTime DateTime;
 		public readonly Guid Guid;
 
-		public MouseParameter(MouseInfo info, MousePoint position)
+		public MouseParameter(MouseInfo info, MousePoint position, DateTime dateTime, Guid guid)
 		{
 			MouseInfo = info;
 			Position = position;
-			DateTime = DateTime.Now;
-			Guid = Guid.NewGuid();
+			DateTime = dateTime;
+			Guid = guid;
 		}
 
 		public override readonly string ToString() => 

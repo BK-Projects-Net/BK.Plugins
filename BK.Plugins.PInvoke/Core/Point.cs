@@ -3,7 +3,7 @@
 namespace BK.Plugins.PInvoke.Core
 {
 	[StructLayout(LayoutKind.Sequential)]
-	public struct Point
+	internal struct Point
 	{
 		public int X;
 		public int Y;

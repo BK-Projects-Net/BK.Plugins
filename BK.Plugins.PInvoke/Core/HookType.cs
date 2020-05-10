@@ -1,6 +1,6 @@
 ﻿namespace BK.Plugins.PInvoke.Core
 {
-	public enum HookType
+	internal enum HookType
 	{
 		WH_JOURNALRECORD = 0,  
 		WH_JOURNALPLAYBACK = 1,

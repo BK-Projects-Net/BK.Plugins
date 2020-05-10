@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BK.Plugins.PInvoke", "BK.Pl
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BK.Plugins.CreationalHelpers", "BK.Plugins.CreationalHelpers\BK.Plugins.CreationalHelpers.csproj", "{EFCEC88C-FF19-45DA-8BED-2D68535BABCD}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Internals", "Internals", "{050BB4BA-B976-49D0-8F73-67B54CAA73AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

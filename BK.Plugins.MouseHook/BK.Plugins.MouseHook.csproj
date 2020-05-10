@@ -48,6 +48,8 @@
     <Compile Include="Core\MouseInfo.cs" />
     <Compile Include="Core\MouseParameter.cs" />
     <Compile Include="Core\MousePoint.cs" />
+    <Compile Include="Common\FlagMapper.cs" />
+    <Compile Include="Common\MouseEnumMapper.cs" />
     <Compile Include="Logic\MouseHookLogic.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -9,10 +9,11 @@ namespace BK.Plugins.MouseHook.Core
 	[Flags]
 	public enum MouseInfo
 	{
-		Move,
-		Wheel,
-		LeftButton, MiddleButton, RightButton,
-		Up, Down,
-		Single, Double
+		Unknown = 0,
+		Move = 1,
+		Wheel = 2,
+		LeftButton = 4, MiddleButton = 8, RightButton = 16,
+		Up = 32, Down = 64,
+		Single = 128, Double = 256
 	}
 }

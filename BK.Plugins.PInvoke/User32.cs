@@ -6,7 +6,7 @@ using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.PInvoke
 {
-	public interface IUser32
+	internal interface IUser32
 	{
 		bool UnhookWindowsHookEx(IntPtr hhk);
 		IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
@@ -15,7 +15,7 @@ namespace BK.Plugins.PInvoke
 		IntPtr SetWindowsHookEx(int idHook, User32.HookProc lpfn, IntPtr hInstance, uint threadId);
 	}
 
-	public class User32 : IUser32
+	internal class User32 : IUser32
 	{
 		public bool UnhookWindowsHookEx(IntPtr hhk) => DllImports.UnhookWindowsHookEx(hhk);
 		public IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam) =>
@@ -30,11 +30,11 @@ namespace BK.Plugins.PInvoke
 		/// <summary>
 		/// When using this delegate make sure you pin it as static field to avoid a StackOverflow Exception!
 		/// </summary>
-		public delegate IntPtr HookProc(int code, IntPtr wParam, IntPtr lParam);
+		internal delegate IntPtr HookProc(int code, IntPtr wParam, IntPtr lParam);
 
 		#endregion
 
-		public static class DllImports
+		internal static class DllImports
 		{
 			[DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 			[return: MarshalAs(UnmanagedType.Bool)]

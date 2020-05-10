@@ -3,7 +3,7 @@
 namespace BK.Plugins.PInvoke.Core
 {
 	[StructLayout(LayoutKind.Sequential)]
-	public struct MouseHookStruct
+	internal struct MouseHookStruct
 	{
 		public Point Point;
 		public int HWnd;

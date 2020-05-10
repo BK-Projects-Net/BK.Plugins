@@ -1,10 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using BK.Plugins.MouseHook.Common;
 using BK.Plugins.MouseHook.Core;
 using BK.Plugins.PInvoke;
 using BK.Plugins.PInvoke.Core;
@@ -13,21 +13,22 @@ namespace BK.Plugins.MouseHook.Logic
 {
 	internal class MouseHookLogic
 	{
-		public bool IsHooked { get; private set; }
-		private TimeSpan _cursorUpdateInterval = TimeSpan.FromMilliseconds(30);
-		private static PInvoke.User32.HookProc _mouseHookProc;
-		private static IntPtr _mouseHook = IntPtr.Zero;
-		private readonly Lazy<Dictionary<MouseInfo, EventHandler<MouseParameter>>> _eventMap;
 		private readonly IUser32 _user32 = new User32();
 		private readonly IKernel32 _kernel32 = new Kernel32();
+		private readonly MouseEnumMapper _enumMapper = new MouseEnumMapper();
 
+		private static User32.HookProc _mouseHookProc;
+		private static IntPtr _mouseHook = IntPtr.Zero;
 		private TimeSpan? _doubleClickTime;
-		public TimeSpan DoubleClickTime => _doubleClickTime ??= TimeSpan.FromMilliseconds(_user32.GetDoubleClickTime());
-
+		
 		public MouseHookLogic()
 		{
 			_mouseHookProc = MouseClickDelegate;
 		}
+
+
+		public bool IsHooked { get; private set; }
+		public TimeSpan DoubleClickTime => _doubleClickTime ??= TimeSpan.FromMilliseconds(_user32.GetDoubleClickTime());
 
 		public event EventHandler<MouseParameter> MoveEvent;
 		public event EventHandler<MouseParameter> LDownEvent;
@@ -37,7 +38,8 @@ namespace BK.Plugins.MouseHook.Logic
 		public event EventHandler<MouseParameter> RDownEvent;
 		public event EventHandler<MouseParameter> RUpEvent;
 		public event EventHandler<MouseParameter> WheelEvent;
-		internal event EventHandler<MouseParameter> MouseHookInternal;
+		public event EventHandler<MouseParameter> MouseHookEvent;
+		public event EventHandler<MouseParameter> UnhandledEvent;
 
 		public virtual void UnHook()
 		{
@@ -68,51 +70,37 @@ namespace BK.Plugins.MouseHook.Logic
 			IsHooked = true;
 		}
 
-
-		public TimeSpan CursorUpdateInterval
-		{
-			get => _cursorUpdateInterval;
-			set
-			{
-				if(value < TimeSpan.FromMilliseconds(1))
-					throw new ArgumentException($"'value' of {nameof(CursorUpdateInterval)} must not be smaller then 1 ms!");
-				_cursorUpdateInterval = value;
-			}
-		}
-
 		private IntPtr MouseClickDelegate(int code, IntPtr wparam, IntPtr lparam)
 		{
-			var now = DateTime.Now;	
 			var hookType = (int) wparam;
 			var mouseHookStruct = (MouseHookStruct) Marshal.PtrToStructure(lparam, typeof(MouseHookStruct));
 			
 			var point = new MousePoint(mouseHookStruct.Point.X, mouseHookStruct.Point.Y);
-			var type = (MouseInfo) hookType;
-			var parameter = new MouseParameter(type, point);
+			var type = (MouseHookType) hookType;
 
-			//_eventMap.Value[type]?.Invoke(type, parameter);
+			var mappedType = _enumMapper.Map(type);
+			var parameter = new MouseParameter(mappedType, point, DateTime.Now, Guid.NewGuid());
+
 			GetHandler(type)?.Invoke(type, parameter);
-			MouseHookInternal?.Invoke(type, parameter);
+			MouseHookEvent?.Invoke(type, parameter);
 
 			return (IntPtr)_user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
 		}
 
-		private ref EventHandler<MouseParameter> GetHandler(MouseInfo key)
+		private ref EventHandler<MouseParameter> GetHandler(MouseHookType key)
 		{
 			switch (key)
 			{
-				//case MouseInfo.LDown: return ref LDownEvent;
-				//case MouseInfo.LUp:	  return ref LUpEvent;
-				//case MouseInfo.Move:  return ref MoveEvent;
-				//case MouseInfo.Wheel: return ref WheelEvent;
-				//case MouseInfo.RDown: return ref RDownEvent;
-				//case MouseInfo.RUp:   return ref RUpEvent;
-				//case MouseInfo.MDown: return ref MDownEvent;
-				//case MouseInfo.MUp:   return ref MUpEvent;
-				//default: throw new ArgumentOutOfRangeException(nameof(key), key, "is not implemented!");
+				case MouseHookType.WM_LBUTTONDOWN: return ref LDownEvent;
+				case MouseHookType.WM_LBUTTONUP: return ref LUpEvent;
+				case MouseHookType.WM_MOUSEMOVE: return ref MoveEvent;
+				case MouseHookType.WM_MOUSEWHEEL: return ref WheelEvent;
+				case MouseHookType.WM_RBUTTONDOWN: return ref RDownEvent;
+				case MouseHookType.WM_RBUTTONUP: return ref RUpEvent;
+				case MouseHookType.WM_MBUTTONDOWN: return ref MDownEvent;
+				case MouseHookType.WM_MBUTTONUP: return ref MUpEvent;
+				default: return ref UnhandledEvent;
 			}
-
-			throw new NotFiniteNumberException();
 		}
 	}
 }
