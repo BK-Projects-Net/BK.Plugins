@@ -9,12 +9,12 @@ namespace BK.Plugins.MouseHook.Core
 {
 	public readonly struct MouseParameter
 	{
-		public readonly PrimaryMouseInfo Primary;
+		public readonly MouseInfo Primary;
 		public readonly MousePoint Position;
 		public readonly DateTime DateTime;
 		public readonly Guid Guid;
 
-		public MouseParameter(PrimaryMouseInfo info, MousePoint position, DateTime dateTime, Guid guid)
+		public MouseParameter(MouseInfo info, MousePoint position, DateTime dateTime, Guid guid)
 		{
 			Primary = info;
 			Position = position;
