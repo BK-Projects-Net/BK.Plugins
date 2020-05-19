@@ -78,6 +78,7 @@ namespace BK.Plugins.MouseHook.Logic
 			
 			var point = new MousePoint(mouseHookStruct.Point.X, mouseHookStruct.Point.Y);
 			var type = (MouseHookType) hookType;
+			var v = (VirtualMouseHookType) wparam;
 
 			var mappedType = _enumMapper.Map(type);
 			var parameter = new MouseParameter(mappedType, point, DateTime.Now, Guid.NewGuid());
