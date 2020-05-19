@@ -1,0 +1,10 @@
+﻿TODO:
+
+1.) Everything is this (BK.Plugins.PInvoke) is internal
+this makes sense as the plugin which references this assembly should hide all that pinvoke stuff
+this means that the user can only access the components which the parent assembly is designed for
+but on the other hand it makes sense to publish this assembly as standalone
+to solve this issue we have to:
+a.) use the opposite of internalsvisibleto by using pre processor conditions
+b.) add a build configuration which enables the accessability of the plugin
+=> this means we can change the accessability of components at compile time
