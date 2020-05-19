@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using BK.Plugins.MouseHook.Core;
-using BK.Internal.PInvoke.Core;
+using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHook.Common
 {

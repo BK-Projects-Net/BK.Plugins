@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using BK.Internal.PInvoke.Core;
+using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHook.Core
 {

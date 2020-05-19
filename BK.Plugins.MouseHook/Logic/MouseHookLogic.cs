@@ -4,10 +4,11 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using BK.Plugins.PInvoke;
+using BK.Plugins.PInvoke.Core;
 using BK.Plugins.MouseHook.Common;
 using BK.Plugins.MouseHook.Core;
-using BK.Internal.PInvoke;
-using BK.Internal.PInvoke.Core;
+
 
 namespace BK.Plugins.MouseHook.Logic
 {
