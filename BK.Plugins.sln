@@ -13,8 +13,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{3277B96E
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{7F321CD4-22F2-4A21-A159-4C598EAB5BCE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MouseHook.ConsoleApp", "..\Examples\MouseHook.ConsoleApp\MouseHook.ConsoleApp.csproj", "{1B295EE1-ADA7-48B7-916B-575EEFEA7D62}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,16 +31,9 @@ Global
 		{EFCEC88C-FF19-45DA-8BED-2D68535BABCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EFCEC88C-FF19-45DA-8BED-2D68535BABCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EFCEC88C-FF19-45DA-8BED-2D68535BABCD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1B295EE1-ADA7-48B7-916B-575EEFEA7D62}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1B295EE1-ADA7-48B7-916B-575EEFEA7D62}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1B295EE1-ADA7-48B7-916B-575EEFEA7D62}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1B295EE1-ADA7-48B7-916B-575EEFEA7D62}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{1B295EE1-ADA7-48B7-916B-575EEFEA7D62} = {7F321CD4-22F2-4A21-A159-4C598EAB5BCE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {590ADB65-5B13-446C-88AA-08198831BF30}
