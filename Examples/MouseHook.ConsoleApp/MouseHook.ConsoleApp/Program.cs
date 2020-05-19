@@ -28,14 +28,28 @@ namespace MouseHook.ConsoleApp
 	{
 		public AppContext()
 		{
-			var hook = new BK.Plugins.MouseHook.Logic.MouseHook();
-			hook.MouseHookEvent += HookOnMouseHookEvent;
+			var hook = BK.Plugins.MouseHook.Logic.MouseHook.Instance;
+			hook.LDoubleEvent += LDoubleEvent;
+			hook.MDoubleEvent += MDoubleEvent;
+			hook.RDoubleEvent += RDoubleEvent;
 			hook.SetHook();
 		}
 
-		private static void HookOnMouseHookEvent(object sender, MouseParameter e)
+		private void LDoubleEvent(object sender, MouseParameter e)
 		{
 			
 		}
+
+		private void MDoubleEvent(object sender, MouseParameter e)
+		{
+			
+		}
+
+		private void RDoubleEvent(object sender, MouseParameter e)
+		{
+			
+		}
+
+		
 	}
 }

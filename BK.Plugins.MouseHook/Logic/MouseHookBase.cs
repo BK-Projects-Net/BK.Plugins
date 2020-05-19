@@ -9,23 +9,9 @@ using BK.Plugins.PInvoke.Core;
 using BK.Plugins.MouseHook.Common;
 using BK.Plugins.MouseHook.Core;
 
-
 namespace BK.Plugins.MouseHook.Logic
 {
-	public sealed class MouseHook : MouseHookBase
-	{
-		public override void SetHook()
-		{
-			base.SetHook();
-		}
-
-		public override void UnHook()
-		{
-			base.UnHook();
-		}
-	}
-
-	public abstract class MouseHookBase
+	public abstract class MouseHookBase<T> : Singleton<T> where T : class
 	{
 		private readonly IUser32 _user32 = new User32();
 		private readonly IKernel32 _kernel32 = new Kernel32();
@@ -95,8 +81,8 @@ namespace BK.Plugins.MouseHook.Logic
 			var mappedType = _enumMapper.Map(type);
 			var parameter = new MouseParameter(mappedType, point, DateTime.Now, Guid.NewGuid());
 
-			GetHandler(type)?.Invoke(type, parameter);
-			MouseHookEvent?.Invoke(type, parameter);
+			GetHandler(type)?.Invoke(this, parameter);
+			MouseHookEvent?.Invoke(this, parameter);
 
 			return (IntPtr)_user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
 		}
