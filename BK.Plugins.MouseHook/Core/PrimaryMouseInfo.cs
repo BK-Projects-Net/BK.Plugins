@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace BK.Plugins.MouseHook.Core
 {
 	[Flags]
-	public enum MouseInfo
+	public enum PrimaryMouseInfo
 	{
 		Unknown = 0,
 		Move = 1,

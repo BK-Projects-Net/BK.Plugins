@@ -45,7 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Core\MouseInfo.cs" />
+    <Compile Include="Core\PrimaryMouseInfo.cs" />
     <Compile Include="Core\MouseParameter.cs" />
     <Compile Include="Core\MousePoint.cs" />
     <Compile Include="Common\FlagMapper.cs" />

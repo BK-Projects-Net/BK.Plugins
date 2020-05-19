@@ -3,7 +3,7 @@
 namespace BK.Plugins.PInvoke.Core
 {
 	[Flags]
-	internal enum MouseHookType : int
+	internal enum MouseHookType 
 	{
 		WM_LBUTTONDOWN = 0x0201,
 		WM_LBUTTONUP = 0x0202,
@@ -14,6 +14,5 @@ namespace BK.Plugins.PInvoke.Core
 		WM_LBUTTONDBLCLK = 0x0203,
 		WM_MBUTTONDOWN = 0x0207,
 		WM_MBUTTONUP = 0x0208
-			
 	}
 }
