@@ -28,7 +28,7 @@ namespace MouseHook.ConsoleApp
 	{
 		public AppContext()
 		{
-			var hook = new MouseHookLogic();
+			var hook = new BK.Plugins.MouseHook.Logic.MouseHook();
 			hook.MouseHookEvent += HookOnMouseHookEvent;
 			hook.SetHook();
 		}

@@ -50,7 +50,7 @@
     <Compile Include="Core\MousePoint.cs" />
     <Compile Include="Common\FlagMapper.cs" />
     <Compile Include="Common\MouseEnumMapper.cs" />
-    <Compile Include="Logic\MouseHookLogic.cs" />
+    <Compile Include="Logic\MouseHookBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

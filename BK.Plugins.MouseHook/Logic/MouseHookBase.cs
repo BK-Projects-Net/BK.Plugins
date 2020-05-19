@@ -12,7 +12,20 @@ using BK.Plugins.MouseHook.Core;
 
 namespace BK.Plugins.MouseHook.Logic
 {
-	internal class MouseHookLogic
+	public sealed class MouseHook : MouseHookBase
+	{
+		public override void SetHook()
+		{
+			base.SetHook();
+		}
+
+		public override void UnHook()
+		{
+			base.UnHook();
+		}
+	}
+
+	public abstract class MouseHookBase
 	{
 		private readonly IUser32 _user32 = new User32();
 		private readonly IKernel32 _kernel32 = new Kernel32();
@@ -22,7 +35,7 @@ namespace BK.Plugins.MouseHook.Logic
 		private static IntPtr _mouseHook = IntPtr.Zero;
 		private TimeSpan? _doubleClickTime;
 		
-		public MouseHookLogic()
+		protected MouseHookBase()
 		{
 			_mouseHookProc = MouseClickDelegate;
 		}
