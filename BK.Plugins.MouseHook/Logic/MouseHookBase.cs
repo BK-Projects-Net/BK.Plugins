@@ -15,7 +15,7 @@ namespace BK.Plugins.MouseHook.Logic
 	{
 		private readonly IUser32 _user32 = new User32();
 		private readonly IKernel32 _kernel32 = new Kernel32();
-		private readonly MouseEnumMapper _enumMapper = new MouseEnumMapper();
+		internal readonly MouseDictionaryMapper _dictionaryMapper = new MouseDictionaryMapper();
 
 		private static User32.HookProc _mouseHookProc;
 		private static IntPtr _mouseHook = IntPtr.Zero;
@@ -30,6 +30,7 @@ namespace BK.Plugins.MouseHook.Logic
 		public bool IsHooked { get; private set; }
 		public TimeSpan DoubleClickTime => _doubleClickTime ??= TimeSpan.FromMilliseconds(_user32.GetDoubleClickTime());
 
+		internal event EventHandler<MouseHookType> MouseHookInternal;
 		public event EventHandler<MouseParameter> MoveEvent;
 		public event EventHandler<MouseParameter> LDownEvent;
 		public event EventHandler<MouseParameter> LUpEvent;
@@ -38,7 +39,6 @@ namespace BK.Plugins.MouseHook.Logic
 		public event EventHandler<MouseParameter> RDownEvent;
 		public event EventHandler<MouseParameter> RUpEvent;
 		public event EventHandler<MouseParameter> WheelEvent;
-		public event EventHandler<MouseParameter> MouseHookEvent;
 		public event EventHandler<MouseParameter> UnhandledEvent;
 
 		public virtual void UnHook()
@@ -78,16 +78,18 @@ namespace BK.Plugins.MouseHook.Logic
 			var point = new MousePoint(mouseHookStruct.Point.X, mouseHookStruct.Point.Y);
 			var type = (MouseHookType) hookType;
 
-			var mappedType = _enumMapper.Map(type);
+			var mappedType = _dictionaryMapper.Map(type);
 			var parameter = new MouseParameter(mappedType, point, DateTime.Now, Guid.NewGuid());
 
 			GetHandler(type)?.Invoke(this, parameter);
-			MouseHookEvent?.Invoke(this, parameter);
+			MouseHookInternal?.Invoke(this, type);
 
 			return (IntPtr)_user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
 		}
 
-		private ref EventHandler<MouseParameter> GetHandler(MouseHookType key)
+		internal abstract void MouseClickDelegateTemplateMethod(MouseInfo info, Point point);
+
+		 internal ref EventHandler<MouseParameter> GetHandler(MouseHookType key)
 		{
 			switch (key)
 			{

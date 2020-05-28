@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -7,6 +8,7 @@ using System.Runtime.Remoting.Messaging;
 using System.Windows.Forms;
 using BK.Plugins.MouseHook.Core;
 using BK.Plugins.MouseHook.Extensons;
+using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHook.Logic
 {
@@ -27,42 +29,36 @@ namespace BK.Plugins.MouseHook.Logic
 			base.SetHook();
 			_disposable = new CompositeDisposable();
 
-			MouseObservable = Observable.FromEvent<EventHandler<MouseParameter>, MouseParameter>(
-					conversion: (conversion) => (sender, arg) => conversion.Invoke(arg),
-					addHandler: h => MouseHookEvent += h,
-					removeHandler: h => MouseHookEvent -= h)
-				.TakeUntil(_unHookIndicator);
+			var mouseParamFilter = new Func<MouseHookType, bool>(type =>
+				type == MouseHookType.WM_LBUTTONDOWN || type == MouseHookType.WM_MBUTTONDOWN||
+				type == MouseHookType.WM_RBUTTONDOWN);
 
-			var doubleClickObservable = MouseObservable
-				.Where(param => !param.Is(MouseInfo.Move) && !param.Is(MouseInfo.Wheel) && !param.Is(MouseInfo.Unknown))
-				.Window(DoubleClickTime).Switch();
+			//_hook = CreateMouseObservable().Where(mouseParamFilter)
+			//	.Buffer(DoubleClickTime)
+			//	.Where(buffer => buffer.Count > 1)
+			//	.Subscribe(buffer =>
+			//	{
+			//		if (buffer.Count == 0) return;
+			//		var item = buffer.GroupBy(type => type)
+			//			.OrderBy(group => group.Count())
+			//			.Take(1).First().First();
 
-			var leftDoubleObs = doubleClickObservable.Window(2).Switch()
-				.Aggregate((current, next) => current.Is(MouseInfo.LeftButton) && next.Is(MouseInfo.LeftButton)
-					? next.ToDoubleClick()
-					: next)
-				.Where(param => param.Is(MouseInfo.Double))
-				.Do(param => LDoubleEvent?.Invoke(this, param))
-				.Subscribe()
-				.DisposeWith(_disposable);
+			//		var mouseInfo = _dictionaryMapper.Map(item);
+			//		var mouseParameter = new MouseParameter(mouseInfo,);
 
-			var middleDoubleObs = doubleClickObservable.Window(2).Switch()
-				.Aggregate((current, next) => current.Is(MouseInfo.MiddleButton) && next.Is(MouseInfo.MiddleButton)
-					? next.ToDoubleClick()
-					: next)
-				.Where(param => param.Is(MouseInfo.Double))
-				.Do(param => MDoubleEvent?.Invoke(this, param))
-				.Subscribe()
-				.DisposeWith(_disposable);
+			//		if(mouseInfo == (MouseInfo.LeftButton | MouseInfo.Down))
+			//			LDoubleEvent?.Invoke(this, parameter);
+			//		else if(mouseInfo == MouseInfo.MDown)
+			//			MDoubleEvent?.Invoke(item.MouseInfo, parameter);
+			//		else if(mouseInfo == MouseInfo.RDown)
+			//			RDoubleEvent?.Invoke(item.MouseInfo,parameter);
 
-			var rightDoubleObs = doubleClickObservable.Window(2).Switch()
-				.Aggregate((current, next) => current.Is(MouseInfo.RightButton) && next.Is(MouseInfo.RightButton)
-					? next.ToDoubleClick()
-					: next)
-				.Where(param => param.Is(MouseInfo.Double))
-				.Do(param => RDoubleEvent?.Invoke(this, param))
-				.Subscribe()
-				.DisposeWith(_disposable);
+			//	},  exception => Console.WriteLine(exception.Message), () => Console.WriteLine("Completed"));
+		}
+
+		internal override void MouseClickDelegateTemplateMethod(MouseInfo info, Point point)
+		{
+			
 		}
 
 		public override void UnHook()
@@ -71,5 +67,13 @@ namespace BK.Plugins.MouseHook.Logic
 			_unHookIndicator.OnNext(Unit.Default);
 			_unHookIndicator.OnCompleted();
 		}
+
+		private IObservable<MouseHookType> CreateMouseObservable() => 
+			Observable.FromEvent<EventHandler<MouseHookType>, MouseHookType>(Conversion, 
+				h => MouseHookInternal += h, 
+				h => MouseHookInternal -= h);
+
+		private EventHandler<MouseHookType> Conversion(Action<MouseHookType> arg) => 
+			new Func<EventHandler<MouseHookType>>(() => (sender, parameter) => arg(parameter)).Invoke();
 	}
 }
