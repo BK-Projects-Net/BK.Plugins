@@ -29,5 +29,10 @@ namespace BK.Plugins.MouseHook.Core
 
 		internal MouseParameter ToDoubleClick() => 
 			new MouseParameter(MouseInfo | MouseInfo.Double, Position, DateTime, Guid);
+
+		internal readonly struct Factory
+		{
+			internal static MouseParameter Create(MouseInfo info, MousePoint point) => new MouseParameter(info, point, DateTime.Now, System.Guid.NewGuid());
+		}
 	}
 }

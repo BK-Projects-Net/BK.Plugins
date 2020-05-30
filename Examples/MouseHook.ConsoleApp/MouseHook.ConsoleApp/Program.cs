@@ -29,27 +29,63 @@ namespace MouseHook.ConsoleApp
 		public AppContext()
 		{
 			var hook = BK.Plugins.MouseHook.Logic.MouseHook.Instance;
-			hook.LDoubleEvent += LDoubleEvent;
-			hook.MDoubleEvent += MDoubleEvent;
-			hook.RDoubleEvent += RDoubleEvent;
+			HookAllEventHandlers(hook);
+			// HookGlobalEventHandler(hook);
+
 			hook.SetHook();
-		}
-
-		private void LDoubleEvent(object sender, MouseParameter e)
-		{
+			//HookObservable(hook);
 			
 		}
 
-		private void MDoubleEvent(object sender, MouseParameter e)
+		private void HookObservable(BK.Plugins.MouseHook.Logic.MouseHook hook)
 		{
-			
+			hook.MouseObservable.Subscribe(param =>
+			{
+				Console.WriteLine(param);
+			});
 		}
 
-		private void RDoubleEvent(object sender, MouseParameter e)
+		private void HookAllEventHandlers(BK.Plugins.MouseHook.Logic.MouseHook hook)
 		{
-			
+			hook.LDownEvent += OnLDownEvent;
+			hook.LUpEvent += OnLUpEvent;
+			hook.LDoubleEvent += OnLDoubleEvent;
+
+			hook.MDownEvent += OnMDownEvent;
+			hook.MUpEvent += OnMUpEvent;
+			hook.MDoubleEvent += OnMDoubleEvent;
+
+			hook.RDownEvent += OnRDownEvent;
+			hook.RUpEvent += OnRUpEvent;
+			hook.RDoubleEvent += OnRDoubleEvent;
+
+			hook.MoveEvent += OnMoveEvent;
+			hook.WheelEvent += OnWheelEvent;
+
+			hook.UnhandledEvent += OnUnhandledEvent;
 		}
 
+		private void HookGlobalEventHandler(BK.Plugins.MouseHook.Logic.MouseHook hook)
+		{
+			hook.GlobalEvent += OnGlobalEvent;
+		}
+
+		#region Handlers
+		private void OnGlobalEvent(object sender, MouseParameter e) => Console.WriteLine(e);
+		private void OnUnhandledEvent(object sender, MouseParameter e) => Console.WriteLine(e);
+		private void OnWheelEvent(object sender, MouseParameter e) => Console.WriteLine(e);
+		private void OnMoveEvent(object sender, MouseParameter e) => Console.WriteLine(e);
+		private void OnRUpEvent(object sender, MouseParameter e) => Console.WriteLine(e);
+		private void OnRDownEvent(object sender, MouseParameter e) => Console.WriteLine(e);
+		private void OnMUpEvent(object sender, MouseParameter e) => Console.WriteLine(e);
+		private void OnMDownEvent(object sender, MouseParameter e) => Console.WriteLine(e);
+		private void OnLUpEvent(object sender, MouseParameter e) => Console.WriteLine(e);
+		private void OnLDownEvent(object sender, MouseParameter e) => Console.WriteLine(e);
+		private void OnLDoubleEvent(object sender, MouseParameter e) => Console.WriteLine(e);
+		private void OnMDoubleEvent(object sender, MouseParameter e) => Console.WriteLine(e);
+		private void OnRDoubleEvent(object sender, MouseParameter e) => Console.WriteLine(e);
+
+		#endregion
 		
 	}
 }

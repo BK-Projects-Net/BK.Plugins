@@ -26,11 +26,13 @@ namespace BK.Plugins.MouseHook.Logic
 			_mouseHookProc = MouseClickDelegate;
 		}
 
+		public bool IsTest { get; set; }
 
-		public bool IsHooked { get; private set; }
+
+		public bool IsHooked { get; protected set; }
 		public TimeSpan DoubleClickTime => _doubleClickTime ??= TimeSpan.FromMilliseconds(_user32.GetDoubleClickTime());
 
-		internal event EventHandler<MouseHookType> MouseHookInternal;
+	
 		public event EventHandler<MouseParameter> MoveEvent;
 		public event EventHandler<MouseParameter> LDownEvent;
 		public event EventHandler<MouseParameter> LUpEvent;
@@ -39,21 +41,18 @@ namespace BK.Plugins.MouseHook.Logic
 		public event EventHandler<MouseParameter> RDownEvent;
 		public event EventHandler<MouseParameter> RUpEvent;
 		public event EventHandler<MouseParameter> WheelEvent;
+
+		public event EventHandler<MouseParameter> LDoubleEvent;
+		public event EventHandler<MouseParameter> MDoubleEvent;
+		public event EventHandler<MouseParameter> RDoubleEvent;
+
+		public event EventHandler<MouseParameter> GlobalEvent;
 		public event EventHandler<MouseParameter> UnhandledEvent;
 
-		public virtual void UnHook()
-		{
-			if(!IsHooked) return;
-
-			_user32.UnhookWindowsHookEx(_mouseHook);
-
-			IsHooked = false;
-		}
+		public virtual void UnHook() => _user32.UnhookWindowsHookEx(_mouseHook);
 
 		public virtual void SetHook()
 		{
-			if (IsHooked) return;
-
 			using var process = Process.GetCurrentProcess();
 			using var module = process.MainModule;
 
@@ -63,33 +62,31 @@ namespace BK.Plugins.MouseHook.Logic
 				handle, 0);
 			if ((IntPtr) _mouseHook == IntPtr.Zero)
 			{
-				var error = Marshal.GetLastWin32Error();
+				var error = Marshal.GetLastWin32Error(); 
 				throw new InvalidComObjectException($"Cannot set the mouse hook! error-code: {error}");
 			}
-
-			IsHooked = true;
 		}
 
 		private IntPtr MouseClickDelegate(int code, IntPtr wparam, IntPtr lparam)
 		{
 			var hookType = (int) wparam;
 			var mouseHookStruct = (MouseHookStruct) Marshal.PtrToStructure(lparam, typeof(MouseHookStruct));
-			
+
 			var point = new MousePoint(mouseHookStruct.Point.X, mouseHookStruct.Point.Y);
 			var type = (MouseHookType) hookType;
 
-			var mappedType = _dictionaryMapper.Map(type);
-			var parameter = new MouseParameter(mappedType, point, DateTime.Now, Guid.NewGuid());
-
-			GetHandler(type)?.Invoke(this, parameter);
-			MouseHookInternal?.Invoke(this, type);
+			if(type == MouseHookType.WM_MOUSEMOVE)
+				MoveEvent?.Invoke(this, MouseParameter.Factory.Create(_dictionaryMapper.Map(type), point));
+			else
+				MouseClickDelegateTemplateMethod(in type, in point);
 
 			return (IntPtr)_user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
 		}
 
-		internal abstract void MouseClickDelegateTemplateMethod(MouseInfo info, Point point);
+		internal abstract void MouseClickDelegateTemplateMethod(in MouseHookType type, in MousePoint point);
 
-		 internal ref EventHandler<MouseParameter> GetHandler(MouseHookType key)
+
+		internal ref EventHandler<MouseParameter> GetHandler(MouseHookType key)
 		{
 			switch (key)
 			{
@@ -104,5 +101,19 @@ namespace BK.Plugins.MouseHook.Logic
 				default: return ref UnhandledEvent;
 			}
 		}
+
+		internal ref EventHandler<MouseParameter> GetDoubleClickHandler(MouseInfo info)
+		{
+			switch (info)
+			{
+				case MouseInfo.LeftButton: return ref LDownEvent;
+				case MouseInfo.MiddleButton: return ref MDoubleEvent;
+				case MouseInfo.RightButton: return ref RDoubleEvent;
+				default: return ref UnhandledEvent;
+			}
+		}
+
+		protected virtual void OnGlobalEvent(MouseParameter e) => 
+			GlobalEvent?.Invoke(this, e);
 	}
 }
