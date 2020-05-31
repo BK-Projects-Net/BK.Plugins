@@ -1,18 +1,25 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using BK.Plugins.PInvoke;
-using BK.Plugins.PInvoke.Core;
 using BK.Plugins.MouseHook.Common;
 using BK.Plugins.MouseHook.Core;
+using BK.Plugins.MouseHook.Extensons;
+using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHook.Logic
 {
 	public abstract class MouseHookBase<T> : Singleton<T> where T : class
 	{
+		/// <summary>
+		/// Make Sure that you Subscribe to this observable **after** you called "SetHook"
+		/// </summary>
+		public Subject<MouseParameter> MouseObservable { get; protected set; } 
+
 		private readonly IUser32 _user32 = new User32();
 		private readonly IKernel32 _kernel32 = new Kernel32();
 		internal readonly MouseDictionaryMapper _dictionaryMapper = new MouseDictionaryMapper();
@@ -25,9 +32,6 @@ namespace BK.Plugins.MouseHook.Logic
 		{
 			_mouseHookProc = MouseClickDelegate;
 		}
-
-		public bool IsTest { get; set; }
-
 
 		public bool IsHooked { get; protected set; }
 		public TimeSpan DoubleClickTime => _doubleClickTime ??= TimeSpan.FromMilliseconds(_user32.GetDoubleClickTime());
@@ -69,21 +73,42 @@ namespace BK.Plugins.MouseHook.Logic
 
 		private IntPtr MouseClickDelegate(int code, IntPtr wparam, IntPtr lparam)
 		{
-			var hookType = (int) wparam;
-			var mouseHookStruct = (MouseHookStruct) Marshal.PtrToStructure(lparam, typeof(MouseHookStruct));
+			var hookType = (MouseHookType)wparam; 
+			var mouseHookStruct = (MSLLHOOKSTRUCT) Marshal.PtrToStructure(lparam, typeof(MSLLHOOKSTRUCT));
 
-			var point = new MousePoint(mouseHookStruct.Point.X, mouseHookStruct.Point.Y);
-			var type = (MouseHookType) hookType;
-
-			if(type == MouseHookType.WM_MOUSEMOVE)
-				MoveEvent?.Invoke(this, MouseParameter.Factory.Create(_dictionaryMapper.Map(type), point));
-			else
-				MouseClickDelegateTemplateMethod(in type, in point);
+			MouseClickDelegateImpl(hookType, mouseHookStruct);
 
 			return (IntPtr)_user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
 		}
 
-		internal abstract void MouseClickDelegateTemplateMethod(in MouseHookType type, in MousePoint point);
+		internal void MouseClickDelegateImpl(MouseHookType type, MSLLHOOKSTRUCT mouseHookStruct)
+		{
+			var mouseTuple = new MouseTuple(type, mouseHookStruct);
+			var time = mouseHookStruct.time;
+			var point = new MousePoint(mouseHookStruct.pt.X, mouseHookStruct.pt.Y);
+
+			if (type == MouseHookType.WM_MOUSEMOVE)
+			{
+				var param = MouseParameter.Factory.Create(_dictionaryMapper.Map(type), point, time);
+				MoveEvent?.Invoke(this, param);
+				GlobalEvent?.Invoke(this, param);
+				if(MouseObservable.HasObservers)
+					MouseObservable.OnNext(param);
+			}
+			else if (type == MouseHookType.WM_MOUSEWHEEL)
+			{
+				var wheelInfo = MouseInfoFactory.CreateWheelInfo(mouseHookStruct);
+				var param = MouseParameter.Factory.Create(wheelInfo, point, time);
+				WheelEvent?.Invoke(this, param);
+				GlobalEvent?.Invoke(this, param);
+				if(MouseObservable.HasObservers)
+					MouseObservable.OnNext(param);
+			}
+			else
+				MouseClickDelegateTemplateMethod(in mouseTuple);
+		}
+
+		internal abstract void MouseClickDelegateTemplateMethod(in MouseTuple mouseTuple);
 
 
 		internal ref EventHandler<MouseParameter> GetHandler(MouseHookType key)

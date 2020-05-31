@@ -29,11 +29,11 @@ namespace MouseHook.ConsoleApp
 		public AppContext()
 		{
 			var hook = BK.Plugins.MouseHook.Logic.MouseHook.Instance;
-			HookAllEventHandlers(hook);
+			//HookAllEventHandlers(hook);
 			// HookGlobalEventHandler(hook);
 
 			hook.SetHook();
-			//HookObservable(hook);
+			HookObservable(hook);
 			
 		}
 

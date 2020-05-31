@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -11,19 +12,29 @@ using System.Runtime.Remoting.Messaging;
 using System.Windows.Forms;
 using BK.Plugins.MouseHook.Core;
 using BK.Plugins.MouseHook.Extensons;
+using BK.Plugins.PInvoke;
 using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHook.Logic
 {
+	internal readonly struct MouseTuple
+	{
+		public readonly MouseHookType Type;
+		public readonly MSLLHOOKSTRUCT HookStruct;
+
+		public MouseTuple(MouseHookType type, MSLLHOOKSTRUCT hookStruct)
+		{
+			Type = type;
+			HookStruct = hookStruct;
+		}
+	}
+
 	public sealed class MouseHook : MouseHookBase<MouseHook>
 	{
-		/// <summary>
-		/// Make Sure that you Subscribe to this observable **after** you called "SetHook"
-		/// </summary>
-		public Subject<MouseParameter> MouseObservable { get; private set; } 
+		
 		private Subject<Unit> _unHookIndicator = new Subject<Unit>();
 		private CompositeDisposable _disposable = new CompositeDisposable();
-		private Subject<(MouseHookType Type, MousePoint point)> _source = new Subject<(MouseHookType Type, MousePoint point)>();
+		private Subject<MouseTuple> _source = new Subject<MouseTuple>();
 
 		private MouseHook() { }
 
@@ -36,26 +47,28 @@ namespace BK.Plugins.MouseHook.Logic
 			}
 			IsHooked = true;
 			_disposable = new CompositeDisposable();
-			_source	= new Subject<(MouseHookType Type, MousePoint point)>();
+			_source	= new Subject<MouseTuple>();
 			_unHookIndicator = new Subject<Unit>();
 			MouseObservable = new Subject<MouseParameter>();
 
 			base.SetHook();
 
-			var tolerance = DoubleClickTime.Ticks / 100 * 100 *10;
+			var tolerance = DoubleClickTime.Ticks / 100 * 100 * 2;
 			var doubleClickTime = TimeSpan.FromTicks(DoubleClickTime.Ticks + tolerance);
 
-			_source.Timestamp().Buffer(DoubleClickTime)
+			_source.Buffer(doubleClickTime, 4)
 				.Where(buffer => buffer.Count > 0)
-				.Select(buffer => buffer.OrderBy(t => t.Timestamp).Select(t => t.Value).ToList())
-				//.Select(buffer => (List<(MouseHookType, MousePoint)>)buffer)
+				.Select(buffer => (List<MouseTuple>)buffer)
 				.Subscribe(EvaluateEvents)
 				.DisposeWith(_disposable);
 
 		}
 
-		private void EvaluateEvents(List<(MouseHookType Type, MousePoint point)> buffer)
+
+		private void EvaluateEvents(IList<MouseTuple> buffer)
 		{
+			Console.WriteLine($"### started! count: {buffer.Count}");
+
 			var rest = buffer.Count % 4;
 			bool hasLeftOver = rest != 0;
 			int count = hasLeftOver ? buffer.Count - rest : buffer.Count;
@@ -71,15 +84,15 @@ namespace BK.Plugins.MouseHook.Logic
 				// double click
 				if (IsDoubleClick(item1.Type, item3.Type))
 				{
-					var param = GetParameterAndInvoke(item1.Type, in item1.point, true);
+					var param = GetParameterAndInvoke(item1.Type, item1.HookStruct.GetMousePoint(), item1.HookStruct.time,true);
 					MouseObservable.OnNext(param);
 				}
 				else // single click
 				{
-					var param1 = GetParameterAndInvoke(item1.Type, in item1.point);
-					var param2 = GetParameterAndInvoke(item2.Type, in item2.point);
-					var param3 = GetParameterAndInvoke(item3.Type, in item3.point);
-					var param4 = GetParameterAndInvoke(item4.Type, in item4.point);
+					var param1 = GetParameterAndInvoke(item1.Type, item1.HookStruct.GetMousePoint(), item1.HookStruct.time);
+					var param2 = GetParameterAndInvoke(item2.Type, item2.HookStruct.GetMousePoint(), item2.HookStruct.time);
+					var param3 = GetParameterAndInvoke(item3.Type, item3.HookStruct.GetMousePoint(), item3.HookStruct.time);
+					var param4 = GetParameterAndInvoke(item4.Type, item4.HookStruct.GetMousePoint(), item4.HookStruct.time);
 					if (MouseObservable.HasObservers)
 					{
 						MouseObservable.OnNext(param1);
@@ -93,10 +106,10 @@ namespace BK.Plugins.MouseHook.Logic
 			// last item if uneven
 			if (hasLeftOver)
 			{
-				var leftOver = buffer.GetRange(count, rest);
+				var leftOver = buffer.Skip(count).Take(rest);
 				foreach (var pair in leftOver)
 				{
-					var param = GetParameterAndInvoke(pair.Type, in pair.point);
+					var param = GetParameterAndInvoke(pair.Type, pair.HookStruct.GetMousePoint(), pair.HookStruct.time);
 
 					if (MouseObservable.HasObservers)
 					{
@@ -105,6 +118,8 @@ namespace BK.Plugins.MouseHook.Logic
 				}
 
 			}
+
+			Console.WriteLine($"### End");
 		}
 
 		private static bool IsDoubleClick(MouseHookType type1, MouseHookType type2)
@@ -115,8 +130,8 @@ namespace BK.Plugins.MouseHook.Logic
 			return false;
 		}
 
-		internal override void MouseClickDelegateTemplateMethod(in MouseHookType type, in MousePoint point) => 
-			_source.OnNext((type, point));
+		internal override void MouseClickDelegateTemplateMethod(in MouseTuple mouseTuple) => 
+			_source.OnNext(mouseTuple);
 
 		public override void UnHook()
 		{
@@ -128,12 +143,12 @@ namespace BK.Plugins.MouseHook.Logic
 			_disposable.Dispose();
 		}
 
-		private MouseParameter GetParameterAndInvoke(MouseHookType type, in MousePoint point, bool isDoubleCLick = false)
+		private MouseParameter GetParameterAndInvoke(MouseHookType type, in MousePoint point, int time, bool isDoubleCLick = false)
 		{
 			if (isDoubleCLick)
 			{
 				var mouseInfo = _dictionaryMapper.Map(type);
-				var param = MouseParameter.Factory.Create(mouseInfo, point).ToDoubleClick();
+				var param = MouseParameter.Factory.Create(mouseInfo, point, time).ToDoubleClick();
 				OnGlobalEvent(param);
 				GetDoubleClickHandler(mouseInfo)?.Invoke(this, param);
 				return param;
@@ -141,7 +156,7 @@ namespace BK.Plugins.MouseHook.Logic
 			else
 			{
 				var mouseInfo = _dictionaryMapper.Map(type);
-				var param = MouseParameter.Factory.Create(mouseInfo, point);
+				var param = MouseParameter.Factory.Create(mouseInfo, point, time);
 				OnGlobalEvent(param);
 				GetHandler(type)?.Invoke(this, param);
 				return param;

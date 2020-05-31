@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHook.Core
 {
@@ -32,7 +31,7 @@ namespace BK.Plugins.MouseHook.Core
 
 		internal readonly struct Factory
 		{
-			internal static MouseParameter Create(MouseInfo info, MousePoint point) => new MouseParameter(info, point, DateTime.Now, System.Guid.NewGuid());
+			internal static MouseParameter Create(MouseInfo info, MousePoint point, int time) => new MouseParameter(info, point, DateTime.Today + TimeSpan.FromTicks(time), System.Guid.NewGuid());
 		}
 	}
 }

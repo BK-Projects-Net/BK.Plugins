@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Windows.Forms;
 using BK.Plugins.MouseHook.Core;
+using BK.Plugins.PInvoke;
 using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHook.Common

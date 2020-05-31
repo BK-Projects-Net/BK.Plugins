@@ -23,6 +23,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -32,6 +33,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -44,12 +46,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\HookType.cs" />
-    <Compile Include="Core\MouseHookStruct.cs" />
     <Compile Include="Core\MouseHookType.cs" />
+    <Compile Include="Core\MSLLHOOKSTRUCT.cs" />
     <Compile Include="Core\Point.cs" />
     <Compile Include="Kernel32.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="User32.cs" />
+    <Compile Include="PInvokeExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BK.Plugins.CreationalHelpers\BK.Plugins.CreationalHelpers.csproj">
