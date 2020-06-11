@@ -52,8 +52,6 @@
     <Compile Include="Core\MouseInfo.cs" />
     <Compile Include="Core\MouseParameter.cs" />
     <Compile Include="Core\MousePoint.cs" />
-    <Compile Include="Common\DictionaryMapper.cs" />
-    <Compile Include="Common\MouseDictionaryMapper.cs" />
     <Compile Include="Extensons\DisposableExtensions.cs" />
     <Compile Include="Logic\MouseHook.cs" />
     <Compile Include="Logic\MouseHookBase.cs" />

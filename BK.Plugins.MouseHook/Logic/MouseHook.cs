@@ -65,7 +65,7 @@ namespace BK.Plugins.MouseHook.Logic
 		}
 
 
-		private void EvaluateEvents(IList<MouseTuple> buffer)
+		private void EvaluateEvents(List<MouseTuple> buffer)
 		{
 			Console.WriteLine($"### started! count: {buffer.Count}");
 
@@ -84,37 +84,25 @@ namespace BK.Plugins.MouseHook.Logic
 				// double click
 				if (IsDoubleClick(item1.Type, item3.Type))
 				{
-					var param = GetParameterAndInvoke(item1.Type, item1.HookStruct.GetMousePoint(), item1.HookStruct.time,true);
-					MouseObservable.OnNext(param);
+					GetParameterAndInvoke(item1, item1.HookStruct.GetMousePoint(), item1.HookStruct.time,true);
 				}
 				else // single click
 				{
-					var param1 = GetParameterAndInvoke(item1.Type, item1.HookStruct.GetMousePoint(), item1.HookStruct.time);
-					var param2 = GetParameterAndInvoke(item2.Type, item2.HookStruct.GetMousePoint(), item2.HookStruct.time);
-					var param3 = GetParameterAndInvoke(item3.Type, item3.HookStruct.GetMousePoint(), item3.HookStruct.time);
-					var param4 = GetParameterAndInvoke(item4.Type, item4.HookStruct.GetMousePoint(), item4.HookStruct.time);
-					if (MouseObservable.HasObservers)
-					{
-						MouseObservable.OnNext(param1);
-						MouseObservable.OnNext(param2);
-						MouseObservable.OnNext(param3);
-						MouseObservable.OnNext(param4);
-					}
+					GetParameterAndInvoke(item1, item1.HookStruct.GetMousePoint(), item1.HookStruct.time);
+					GetParameterAndInvoke(item2, item2.HookStruct.GetMousePoint(), item2.HookStruct.time);
+					GetParameterAndInvoke(item3, item3.HookStruct.GetMousePoint(), item3.HookStruct.time);
+					GetParameterAndInvoke(item4, item4.HookStruct.GetMousePoint(), item4.HookStruct.time);
 				}
 			}
 
 			// last item if uneven
 			if (hasLeftOver)
 			{
+				// TODO: Use getrange for performance
 				var leftOver = buffer.Skip(count).Take(rest);
 				foreach (var pair in leftOver)
 				{
-					var param = GetParameterAndInvoke(pair.Type, pair.HookStruct.GetMousePoint(), pair.HookStruct.time);
-
-					if (MouseObservable.HasObservers)
-					{
-						MouseObservable.OnNext(param);
-					}
+					GetParameterAndInvoke(pair, pair.HookStruct.GetMousePoint(), pair.HookStruct.time);
 				}
 
 			}
@@ -127,6 +115,7 @@ namespace BK.Plugins.MouseHook.Logic
 			if (type1 == MouseHookType.WM_LBUTTONDOWN && type2 == MouseHookType.WM_LBUTTONDOWN) return true;
 			if (type1 == MouseHookType.WM_MBUTTONDOWN && type2 == MouseHookType.WM_MBUTTONDOWN) return true;
 			if (type1 == MouseHookType.WM_RBUTTONDOWN && type2 == MouseHookType.WM_RBUTTONDOWN) return true;
+			if (type1 == MouseHookType.WM_XBUTTONDOWN && type2 == MouseHookType.WM_XBUTTONDOWN) return true;
 			return false;
 		}
 
@@ -143,24 +132,23 @@ namespace BK.Plugins.MouseHook.Logic
 			_disposable.Dispose();
 		}
 
-		private MouseParameter GetParameterAndInvoke(MouseHookType type, in MousePoint point, int time, bool isDoubleCLick = false)
+		private void GetParameterAndInvoke(in MouseTuple tuple, in MousePoint point, int time, bool isDoubleCLick = false)
 		{
 			if (isDoubleCLick)
 			{
-				var mouseInfo = _dictionaryMapper.Map(type);
+				var mouseInfo = _mouseInfoFactory.Create(tuple.Type, tuple.HookStruct);
 				var param = MouseParameter.Factory.Create(mouseInfo, point, time).ToDoubleClick();
-				OnGlobalEvent(param);
-				GetDoubleClickHandler(mouseInfo)?.Invoke(this, param);
-				return param;
+				var handler = GetDoubleClickHandler(mouseInfo);
+				Invoke(handler, this, param);
 			}
 			else
 			{
-				var mouseInfo = _dictionaryMapper.Map(type);
+				var mouseInfo = _mouseInfoFactory.Create(tuple.Type, tuple.HookStruct);
 				var param = MouseParameter.Factory.Create(mouseInfo, point, time);
-				OnGlobalEvent(param);
-				GetHandler(type)?.Invoke(this, param);
-				return param;
+				var handler = GetHandler(tuple.Type, mouseInfo);
+				Invoke(handler, this, param);
 			}
 		}
+
 	}
 }
