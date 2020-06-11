@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace MouseHook.ConsoleApp
 {
-	class Program
+	class Program 
 	{
 		[STAThread]
 		static void Main(string[] args)
