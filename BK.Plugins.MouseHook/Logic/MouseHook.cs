@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive;
+using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -38,9 +39,12 @@ namespace BK.Plugins.MouseHook.Logic
 
 		private MouseHook() { }
 
+		public IScheduler ObserveOnScheduler { get; set; }
+		public IScheduler SubscribeOnScheduler { get; set; }
+
 		public override void SetHook()
 		{
-			if (IsHooked)
+			if (IsHooked) 
 			{
 				Debug.WriteLine($"### {nameof(MouseHook)}.{nameof(SetHook)}: The hook is already set! If you need a new hook then call {nameof(UnHook)} before you call {nameof(SetHook)}!");
 				return;
@@ -56,7 +60,12 @@ namespace BK.Plugins.MouseHook.Logic
 			var tolerance = DoubleClickTime.Ticks / 100 * 100 * 2;
 			var doubleClickTime = TimeSpan.FromTicks(DoubleClickTime.Ticks + tolerance);
 
-			_source.Buffer(doubleClickTime, 4)
+			if (ObserveOnScheduler != null)
+				_source.ObserveOn(ObserveOnScheduler);
+			if (SubscribeOnScheduler != null)
+				_source.SubscribeOn(SubscribeOnScheduler);
+
+			var pipe = _source.Buffer(doubleClickTime, 4)
 				.Where(buffer => buffer.Count > 0)
 				.Select(buffer => (List<MouseTuple>)buffer)
 				.Subscribe(EvaluateEvents)
@@ -67,7 +76,7 @@ namespace BK.Plugins.MouseHook.Logic
 
 		private void EvaluateEvents(List<MouseTuple> buffer)
 		{
-			Console.WriteLine($"### started! count: {buffer.Count}");
+			Debug.WriteLine($"### started! count: {buffer.Count}");
 
 			var rest = buffer.Count % 4;
 			bool hasLeftOver = rest != 0;
@@ -107,7 +116,7 @@ namespace BK.Plugins.MouseHook.Logic
 
 			}
 
-			Console.WriteLine($"### End");
+			Debug.WriteLine($"### End");
 		}
 
 		private static bool IsDoubleClick(MouseHookType type1, MouseHookType type2)
