@@ -6,9 +6,9 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("BK.Plugins.MouseHook")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("A global windows mouse hook")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Brayan Khosravian")]
 [assembly: AssemblyProduct("BK.Plugins.MouseHook")]
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
