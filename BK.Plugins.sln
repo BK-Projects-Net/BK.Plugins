@@ -17,9 +17,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MouseHook.ConsoleApp", "Exa
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BK.Plugins.MouseHook.Tests", "BK.Plugins.MouseHook.Tests\BK.Plugins.MouseHook.Tests.csproj", "{80A8A18C-5E45-4228-B440-668DAACB81DA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BK.IoC", "BK.IoC\BK.IoC.csproj", "{8A2BA79C-3621-4F60-BA3A-9653283041B6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BK.IoC", "BK.IoC\BK.IoC.csproj", "{8A2BA79C-3621-4F60-BA3A-9653283041B6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BK.IoC.Tests", "BK.IoC.Tests\BK.IoC.Tests.csproj", "{7A37C1D4-067A-4F5C-819B-57CCB29F33DF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BK.IoC.Tests", "BK.IoC.Tests\BK.IoC.Tests.csproj", "{7A37C1D4-067A-4F5C-819B-57CCB29F33DF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
