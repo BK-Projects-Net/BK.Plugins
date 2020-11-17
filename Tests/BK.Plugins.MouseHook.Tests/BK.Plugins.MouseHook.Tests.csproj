@@ -49,11 +49,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BK.Plugins.MouseHook\BK.Plugins.MouseHook.csproj">
+    <ProjectReference Include="..\..\Source\BK.Plugins.MouseHook\BK.Plugins.MouseHook.csproj">
       <Project>{bf0f14e7-6907-49a9-bf01-75dbe2de584f}</Project>
       <Name>BK.Plugins.MouseHook</Name>
     </ProjectReference>
-    <ProjectReference Include="..\BK.Plugins.PInvoke\BK.Plugins.PInvoke.csproj">
+    <ProjectReference Include="..\..\Source\BK.Plugins.PInvoke\BK.Plugins.PInvoke.csproj">
       <Project>{01364ED3-07F3-4767-9F9B-C00117585799}</Project>
       <Name>BK.Plugins.PInvoke</Name>
     </ProjectReference>
