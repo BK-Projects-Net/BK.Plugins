@@ -1,21 +1,9 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Reactive.Concurrency;
-using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Threading;
 using BK.Plugins.PInvoke;
 using BK.Plugins.MouseHook.Common;
 using BK.Plugins.MouseHook.Core;
-using BK.Plugins.MouseHook.Extensons;
 using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHook.Logic
@@ -72,20 +60,14 @@ namespace BK.Plugins.MouseHook.Logic
 
 		public virtual void SetHook()
 		{
-			using var process = Process.GetCurrentProcess();
-			using var module = process.MainModule;
-
 			var mouseHook = HookType.WH_MOUSE_LL;
-			var handle = _kernel32.GetModuleHandle(module.ModuleName);
-			_mouseHook = _user32.SetWindowsHookEx((int)mouseHook, _mouseHookProc,
-				handle, 0);
+			_mouseHook = _user32.SetWindowsHookEx((int)mouseHook, _mouseHookProc, IntPtr.Zero, 0);
+			
 			if ((IntPtr) _mouseHook == IntPtr.Zero)
 			{
 				var error = Marshal.GetLastWin32Error(); 
 				throw new InvalidComObjectException($"Cannot set the mouse hook! error-code: {error}");
 			}
-
-
 		}
 
 		private IntPtr MouseClickDelegate(int code, IntPtr wparam, IntPtr lparam)

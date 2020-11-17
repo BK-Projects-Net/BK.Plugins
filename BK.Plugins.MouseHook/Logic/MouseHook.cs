@@ -60,13 +60,14 @@ namespace BK.Plugins.MouseHook.Logic
 			var tolerance = DoubleClickTime.Ticks / 100 * 100 * 2;
 			var doubleClickTime = TimeSpan.FromTicks(DoubleClickTime.Ticks + tolerance);
 
-			if (ObserveOnScheduler != null)
-				_source.ObserveOn(ObserveOnScheduler);
-			if (SubscribeOnScheduler != null)
-				_source.SubscribeOn(SubscribeOnScheduler);
+			var pipe = _source.Buffer(doubleClickTime, 4);
 
-			var pipe = _source.Buffer(doubleClickTime, 4)
-				.Where(buffer => buffer.Count > 0)
+			if (ObserveOnScheduler != null)
+				pipe.ObserveOn(ObserveOnScheduler);
+			if (SubscribeOnScheduler != null)
+				pipe.SubscribeOn(SubscribeOnScheduler);
+
+			pipe.Where(buffer => buffer.Count > 0)
 				.Select(buffer => (List<MouseTuple>)buffer)
 				.Subscribe(EvaluateEvents)
 				.DisposeWith(_disposable);
