@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics;
 
 namespace BK.Plugins.PInvoke
 {
+	[DebuggerStepThrough]
 	internal static class PInvokeExtensions
 	{
 		internal static unsafe int GetLowWord(this int value) => ((ushort *) &value)[0];

@@ -3,4 +3,23 @@
     <Deterministic>true</Deterministic>
   </PropertyGroup>
 
+  <!-- packing -->
+  <PropertyGroup>
+    <PackageOutputPath>$(SolutionDir)MyNugets</PackageOutputPath>
+    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <!--<VersionSuffix Condition=" '$(IsLocalBuild)' == 'true' ">preview-$([System.DateTime]::Now.ToString(yyyyMMddmmss))</VersionSuffix>-->
+  </PropertyGroup>
+
+  <!-- START [source link]: https://github.com/dotnet/sourcelink/blob/master/README.md -->
+  <PropertyGroup>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All"/>
+  </ItemGroup>
+  <!-- END [source link] -->
+
 </Project>

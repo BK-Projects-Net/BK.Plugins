@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using BK.Plugins.PInvoke.Core;
 
@@ -15,6 +14,7 @@ namespace BK.Plugins.PInvoke
 		IntPtr SetWindowsHookEx(int idHook, User32.HookProc lpfn, IntPtr hInstance, uint threadId);
 	}
 
+	[DebuggerStepThrough]
 	internal class User32 : IUser32
 	{
 		public bool UnhookWindowsHookEx(IntPtr hhk) => DllImports.UnhookWindowsHookEx(hhk);

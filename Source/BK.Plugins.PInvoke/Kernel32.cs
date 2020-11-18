@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Text;
-using BK.Plugins.CreationalHelpers;
 
 namespace BK.Plugins.PInvoke
 {
@@ -13,6 +10,7 @@ namespace BK.Plugins.PInvoke
 		uint GetCurrentThreadId();
 	}
 
+	[DebuggerStepThrough]
 	internal class Kernel32 : IKernel32
 	{
 		public IntPtr GetModuleHandle(string lpModuleName) => DllImports.GetModuleHandle(lpModuleName);
