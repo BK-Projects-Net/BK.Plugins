@@ -107,7 +107,6 @@ namespace BK.Plugins.MouseHook.Logic
 
 		internal abstract void MouseClickDelegateTemplateMethod(in MouseTuple mouseTuple);
 
-
 		internal EventHandler<MouseParameter> GetHandler(MouseHookType key, in MouseInfo info) =>
 			key switch
 			{
@@ -130,7 +129,7 @@ namespace BK.Plugins.MouseHook.Logic
 		internal EventHandler<MouseParameter> GetDoubleClickHandler(MouseInfo info) =>
 			info switch
 			{
-				MouseInfo.LeftButton => LDownEvent,
+				MouseInfo.LeftButton => LDoubleEvent,
 				MouseInfo.MiddleButton => MDoubleEvent,
 				MouseInfo.RightButton => RDoubleEvent,
 				MouseInfo.Mouse4 => Mouse4DoubleEvent,

@@ -1,12 +1,13 @@
 ﻿<Project>
   <PropertyGroup>
     <Deterministic>true</Deterministic>
+    <LangVersion>8</LangVersion>
   </PropertyGroup>
 
   <!-- packing -->
   <PropertyGroup>
     <PackageOutputPath>$(SolutionDir)MyNugets</PackageOutputPath>
-    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <!--<AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision> This does not work because of some reason...-->
     <!--<VersionSuffix Condition=" '$(IsLocalBuild)' == 'true' ">preview-$([System.DateTime]::Now.ToString(yyyyMMddmmss))</VersionSuffix>-->
   </PropertyGroup>
 
