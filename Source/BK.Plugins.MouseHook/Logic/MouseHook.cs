@@ -8,25 +8,17 @@ using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHook.Logic
 {
-	public abstract class MouseHook
+	public abstract class MouseHook : IDisposable
 	{
 		private readonly IUser32 _user32 = new User32();
-		private readonly IKernel32 _kernel32 = new Kernel32();
 		internal readonly MouseInfoFactory _mouseInfoFactory = new MouseInfoFactory();
 
-		private static User32.HookProc _mouseHookProc;
-		private static IntPtr _mouseHook = IntPtr.Zero;
-		private TimeSpan? _doubleClickTime;
-		protected MouseHook()
-		{
-			_mouseHookProc = MouseClickDelegate;
-		}
+		private User32.HookProc _mouseHookProc;
+		private GCHandle _mouseHookProcHandle;	// used to pin an instance to not get GC // has to be released
+		private IntPtr _mouseHook = IntPtr.Zero;
 
 		public bool IsHooked { get; protected set; }
-
-		
-		public TimeSpan DoubleClickTime => _doubleClickTime ??= TimeSpan.FromMilliseconds(_user32.GetDoubleClickTime());
-		
+		public TimeSpan DoubleClickTime => TimeSpan.FromMilliseconds(_user32.GetDoubleClickTime());
 		public Subject<MouseParameter> MouseObservable { get; protected set; }
 		
 		#region Events
@@ -55,6 +47,7 @@ namespace BK.Plugins.MouseHook.Logic
 
 		public virtual void UnHook()
 		{
+			_mouseHookProcHandle.Free();
 			_user32.UnhookWindowsHookEx(_mouseHook);
 		}
 
@@ -63,6 +56,9 @@ namespace BK.Plugins.MouseHook.Logic
 		/// </summary>
 		public virtual void SetHook()
 		{
+			_mouseHookProc = MouseClickDelegate;
+			_mouseHookProcHandle = GCHandle.Alloc(_mouseHookProc);
+
 			var mouseHook = HookType.WH_MOUSE_LL;
 			_mouseHook = _user32.SetWindowsHookEx((int)mouseHook, _mouseHookProc, IntPtr.Zero, 0);
 			
@@ -146,6 +142,12 @@ namespace BK.Plugins.MouseHook.Logic
 			GlobalEvent?.Invoke(sender, param);
 			if(MouseObservable.HasObservers)
 				MouseObservable.OnNext(param);
+		}
+
+		public void Dispose()
+		{
+			MouseObservable?.Dispose();
+			UnHook();
 		}
 	}
 }
