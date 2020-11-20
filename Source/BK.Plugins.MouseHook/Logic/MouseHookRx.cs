@@ -68,7 +68,7 @@ namespace BK.Plugins.MouseHook.Logic
 
 		}
 
-		public Subject<MouseParameter> MouseObservable { get; set; }
+		public Subject<MouseParameter> MouseObservable { get; private set; }
 
 
 		private void EvaluateEvents(List<LowLevelMouseTuple> buffer)
@@ -145,7 +145,7 @@ namespace BK.Plugins.MouseHook.Logic
 				var mouseInfo = _mouseInfoFactory.Create(info.Type, info.HookStruct);
 				var param = MouseParameter.Factory.Create(mouseInfo, point, time).ToDoubleClick();
 				var handler = GetDoubleClickHandler(mouseInfo);
-				Invoke(handler, this, param);
+				InvokeDoubleClickHandler(info, param);
 			}
 			else
 			{
@@ -156,5 +156,43 @@ namespace BK.Plugins.MouseHook.Logic
 			}
 		}
 
+
+		internal void InvokeDoubleClickHandler(MouseInfo info, in MouseParameter parameter)
+		{
+			switch (info)
+			{
+				case MouseInfo.LeftButton:
+					Invoke(LDoubleEvent, this, parameter);
+					break;
+				case MouseInfo.MiddleButton:
+					Invoke(MDoubleEvent, this, parameter);
+					break;
+				case MouseInfo.RightButton:
+					Invoke(RDoubleEvent, this, parameter);
+					break;
+				case MouseInfo.Mouse4:
+					Invoke(Mouse4DoubleEvent, this, parameter);
+					break;
+				case MouseInfo.Mouse5:
+					Invoke(Mouse5DoubleEvent, this, parameter);
+					break;
+				default:
+					InvokeUnhandled(this, parameter);
+					break;
+			}
+		}
+
+		protected override void Invoke(EventHandler<MouseParameter> handler, object sender, MouseParameter param)
+		{
+			base.Invoke(handler, sender, param);
+			if(MouseObservable.HasObservers)
+				MouseObservable.OnNext(param);
+		}
+
+		public event EventHandler<MouseParameter> LDoubleEvent;
+		public event EventHandler<MouseParameter> MDoubleEvent;
+		public event EventHandler<MouseParameter> RDoubleEvent;
+		public event EventHandler<MouseParameter> Mouse4DoubleEvent;
+		public event EventHandler<MouseParameter> Mouse5DoubleEvent;
 	}
 }

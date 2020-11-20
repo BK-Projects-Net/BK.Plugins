@@ -34,12 +34,6 @@ namespace BK.Plugins.MouseHook.Logic
 		public event EventHandler<MouseParameter> Mouse5UpEvent;
 		public event EventHandler<MouseParameter> Mouse5DownEvent;
 
-		public event EventHandler<MouseParameter> LDoubleEvent;
-		public event EventHandler<MouseParameter> MDoubleEvent;
-		public event EventHandler<MouseParameter> RDoubleEvent;
-		public event EventHandler<MouseParameter> Mouse4DoubleEvent;
-		public event EventHandler<MouseParameter> Mouse5DoubleEvent;
-
 		public event EventHandler<MouseParameter> GlobalEvent;
 		public event EventHandler<MouseParameter> UnhandledEvent;
 		#endregion
@@ -61,10 +55,10 @@ namespace BK.Plugins.MouseHook.Logic
 			var mouseHook = HookType.WH_MOUSE_LL;
 			_mouseHook = _user32.SetWindowsHookEx((int)mouseHook, _mouseHookProc, IntPtr.Zero, 0);
 			
-			if ((IntPtr) _mouseHook == IntPtr.Zero)
+			if (_mouseHook == IntPtr.Zero)
 			{
 				var error = Marshal.GetLastWin32Error(); 
-				throw new InvalidComObjectException($"Cannot set the mouse hook! error-code: {error}");
+				throw new InvalidComObjectException($"Cannot set the mouse hook! error: {error}");
 			}
 		}
 
@@ -75,7 +69,7 @@ namespace BK.Plugins.MouseHook.Logic
 
 			MouseClickDelegateImpl(hookType, mouseHookStruct);
 
-			return (IntPtr)_user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
+			return _user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
 		}
 
 		internal void MouseClickDelegateImpl(MouseHookType type, MSLLHOOKSTRUCT mouseHookStruct)
@@ -151,19 +145,10 @@ namespace BK.Plugins.MouseHook.Logic
 			}
 		}
 
+		protected void InvokeUnhandled(object sender, MouseParameter parameter) => 
+			Invoke(UnhandledEvent, sender, parameter);
 
-		internal EventHandler<MouseParameter> GetDoubleClickHandler(MouseInfo info) =>
-			info switch
-			{
-				MouseInfo.LeftButton => LDoubleEvent,
-				MouseInfo.MiddleButton => MDoubleEvent,
-				MouseInfo.RightButton => RDoubleEvent,
-				MouseInfo.Mouse4 => Mouse4DoubleEvent,
-				MouseInfo.Mouse5 => Mouse5DoubleEvent,
-				_ => UnhandledEvent
-			};
-
-		protected void Invoke(EventHandler<MouseParameter> handler, object sender, MouseParameter param)
+		protected virtual void Invoke(EventHandler<MouseParameter> handler, object sender, MouseParameter param)
 		{
 			handler?.Invoke(sender, param);
 			GlobalEvent?.Invoke(sender, param);
@@ -171,8 +156,9 @@ namespace BK.Plugins.MouseHook.Logic
 			//	MouseObservable.OnNext(param);
 		}
 
-		public void Dispose()
+		public virtual void Dispose()
 		{
+			if (!IsHooked) return;
 			//MouseObservable?.Dispose();
 			UnHook();
 		}
