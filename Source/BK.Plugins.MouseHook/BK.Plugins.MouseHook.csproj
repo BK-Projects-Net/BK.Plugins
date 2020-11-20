@@ -3,7 +3,7 @@
   <!-- nuget and versioning -->
   <PropertyGroup>
     <PackageId>BK.Plugins.MouseHook</PackageId>
-    <Version>1.0.0.8</Version>
+    <VersionPrefix>1.0.1</VersionPrefix>
     <Authors>Brayan Khosravian</Authors>
     <Company>Brayan Khosravian</Company>
     <Description>A global mouse hook for windows</Description>

@@ -2,7 +2,7 @@
   <!-- nuget and versioning -->
   <PropertyGroup>
     <PackageId>BK.Plugins.MouseHookRx</PackageId>
-    <Version>1.0.0.0</Version>
+    <VersionPrefix>1.0.1</VersionPrefix>
     <Authors>Brayan Khosravian</Authors>
     <Company>Brayan Khosravian</Company>
     <Description>A global mouse hook for windows using reactive extension for mouse combinations like double click</Description>
