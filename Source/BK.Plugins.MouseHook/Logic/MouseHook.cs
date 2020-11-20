@@ -8,7 +8,7 @@ using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHook.Logic
 {
-	public abstract class MouseHook<T> : Singleton<T> where T : class
+	public abstract class MouseHook
 	{
 		private readonly IUser32 _user32 = new User32();
 		private readonly IKernel32 _kernel32 = new Kernel32();

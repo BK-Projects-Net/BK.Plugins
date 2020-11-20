@@ -30,13 +30,11 @@ namespace BK.Plugins.MouseHook.Logic
 		}
 	}
 
-	public sealed class MouseHookRx : MouseHook<MouseHookRx>
+	public sealed class MouseHookRx : MouseHook
 	{
 		private Subject<Unit> _unHookIndicator = new Subject<Unit>();
 		private CompositeDisposable _disposable = new CompositeDisposable();
 		private Subject<MouseTuple> _source = new Subject<MouseTuple>();
-
-		private MouseHookRx() { }
 
 		public IScheduler ObserveOnScheduler { get; set; }
 		public IScheduler SubscribeOnScheduler { get; set; }

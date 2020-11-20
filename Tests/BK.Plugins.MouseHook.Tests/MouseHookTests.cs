@@ -23,7 +23,7 @@ namespace BK.Plugins.MouseHook.Tests
 		public void MouseClickDelegateImpl_LeftDoubleClick()
 		{
 			// Arrange
-			var hook = Logic.MouseHookRx.Instance;
+			var hook = new Logic.MouseHookRx();
 			hook.SubscribeOnScheduler = new HistoricalScheduler();
 			var scheduler = (HistoricalScheduler)hook.SubscribeOnScheduler;
 			hook.SetHook();
