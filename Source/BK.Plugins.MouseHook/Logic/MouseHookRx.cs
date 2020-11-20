@@ -144,15 +144,13 @@ namespace BK.Plugins.MouseHook.Logic
 			{
 				var mouseInfo = _mouseInfoFactory.Create(info.Type, info.HookStruct);
 				var param = MouseParameter.Factory.Create(mouseInfo, point, time).ToDoubleClick();
-				var handler = GetDoubleClickHandler(mouseInfo);
-				InvokeDoubleClickHandler(info, param);
+				InvokeDoubleClickHandler(mouseInfo, param);
 			}
 			else
 			{
 				var mouseInfo = _mouseInfoFactory.Create(info.Type, info.HookStruct);
 				var param = MouseParameter.Factory.Create(mouseInfo, point, time);
-				//var handler = GetHandler(info.Type, mouseInfo);
-				//Invoke(handler, this, param);
+				InvokeHandler(info.Type,this, param);
 			}
 		}
 

@@ -94,53 +94,53 @@ namespace BK.Plugins.MouseHook.Logic
 		/// <param name="parameter"></param>
 		internal virtual void MouseClickDelegateOverride(in LowLevelMouseTuple tuple, in MouseParameter parameter)
 		{
-			InvokeHandler(tuple.Type, parameter);
+			InvokeHandler(tuple.Type,this, parameter);
 		}
 
-		private void InvokeHandler(MouseHookType key, in MouseParameter parameter)
+		protected void InvokeHandler(MouseHookType key, object sender, in MouseParameter parameter)
 		{
 			var info = parameter.MouseInfo;
 
 			switch (key)
 			{
 				case MouseHookType.WM_LBUTTONDOWN:
-					Invoke(LDownEvent, this, parameter);
+					Invoke(LDownEvent, sender, parameter);
 					break;
 				case MouseHookType.WM_LBUTTONUP:
-					Invoke(LUpEvent, this, parameter);
+					Invoke(LUpEvent, sender, parameter);
 					break;
 				case MouseHookType.WM_MOUSEMOVE:
-					Invoke(MoveEvent, this, parameter);
+					Invoke(MoveEvent, sender, parameter);
 					break;
 				case MouseHookType.WM_MOUSEWHEEL:
-					Invoke(WheelEvent, this, parameter);
+					Invoke(WheelEvent, sender, parameter);
 					break;
 				case MouseHookType.WM_RBUTTONDOWN:
-					Invoke(RDownEvent, this, parameter);
+					Invoke(RDownEvent, sender, parameter);
 					break;
 				case MouseHookType.WM_RBUTTONUP:
-					Invoke(RUpEvent, this, parameter);
+					Invoke(RUpEvent, sender, parameter);
 					break;
 				case MouseHookType.WM_MBUTTONDOWN:
-					Invoke(MDownEvent, this, parameter);
+					Invoke(MDownEvent, sender, parameter);
 					break;
 				case MouseHookType.WM_MBUTTONUP:
-					Invoke(MUpEvent, this, parameter);
+					Invoke(MUpEvent, sender, parameter);
 					break;
 				case MouseHookType.WM_XBUTTONDOWN when (info & MouseInfo.Mouse4) != 0:
-					Invoke(Mouse4DownEvent, this, parameter);
+					Invoke(Mouse4DownEvent, sender, parameter);
 					break;
 				case MouseHookType.WM_XBUTTONDOWN when (info & MouseInfo.Mouse5) != 0:
-					Invoke(Mouse5DownEvent, this, parameter);
+					Invoke(Mouse5DownEvent, sender, parameter);
 					break;
 				case MouseHookType.WM_XBUTTONUP when (info & MouseInfo.Mouse4) != 0:
-					Invoke(Mouse4UpEvent, this, parameter);
+					Invoke(Mouse4UpEvent, sender, parameter);
 					break;
 				case MouseHookType.WM_XBUTTONUP when (info & MouseInfo.Mouse5) != 0:
-					Invoke(Mouse5UpEvent, this, parameter);
+					Invoke(Mouse5UpEvent, sender, parameter);
 					break;
 				default:
-					Invoke(UnhandledEvent, this, parameter);
+					InvokeUnhandled(sender, parameter);
 					break;
 			}
 		}
