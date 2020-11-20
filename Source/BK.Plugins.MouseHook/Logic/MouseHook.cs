@@ -80,48 +80,76 @@ namespace BK.Plugins.MouseHook.Logic
 
 		internal void MouseClickDelegateImpl(MouseHookType type, MSLLHOOKSTRUCT mouseHookStruct)
 		{
-			var mouseTuple = new MouseTuple(type, mouseHookStruct);
+			var mouseTuple = new LowLevelMouseTuple(type, mouseHookStruct); // TODO: get rid of this later
 			var time = mouseHookStruct.time;
 			var point = new MousePoint(mouseHookStruct.pt.X, mouseHookStruct.pt.Y);
+			var info = _mouseInfoFactory.Create(type, mouseHookStruct);
+			var parameter = MouseParameter.Factory.Create(info, point, time);
 
-			if (type == MouseHookType.WM_MOUSEMOVE)
-			{
-				var info = _mouseInfoFactory.Create(type, mouseHookStruct);
-				var param = MouseParameter.Factory.Create(info, point, time);
-				Invoke(MoveEvent, this, param);
-				return;
-			}
-			if (type == MouseHookType.WM_MOUSEWHEEL)
-			{
-				var wheelInfo = _mouseInfoFactory.Create(type, mouseHookStruct);
-				var param = MouseParameter.Factory.Create(wheelInfo, point, time);
-				Invoke(WheelEvent, this, param);
-				return;
-			}
-			
-			MouseClickDelegateTemplateMethod(in mouseTuple);
+			MouseClickDelegateOverride(mouseTuple, parameter);
+			MouseClickDelegateTemplateMethod(in mouseTuple); // TODO: remove this later
 
 		}
 
-		internal abstract void MouseClickDelegateTemplateMethod(in MouseTuple mouseTuple);
+		// TODO: get rid of this later
+		internal abstract void MouseClickDelegateTemplateMethod(in LowLevelMouseTuple lowLevelMouseTuple);
 
-		internal EventHandler<MouseParameter> GetHandler(MouseHookType key, in MouseInfo info) =>
-			key switch
+		/// <summary>
+		/// do not call the base implementation when overriding this
+		/// </summary>
+		/// <param name="parameter"></param>
+		internal virtual void MouseClickDelegateOverride(in LowLevelMouseTuple tuple, in MouseParameter parameter)
+		{
+			InvokeHandler(tuple.Type, parameter);
+		}
+
+		private void InvokeHandler(MouseHookType key, in MouseParameter parameter)
+		{
+			var info = parameter.MouseInfo;
+
+			switch (key)
 			{
-				MouseHookType.WM_LBUTTONDOWN => LDownEvent,
-				MouseHookType.WM_LBUTTONUP => LUpEvent,
-				MouseHookType.WM_MOUSEMOVE => MoveEvent,
-				MouseHookType.WM_MOUSEWHEEL => WheelEvent,
-				MouseHookType.WM_RBUTTONDOWN => RDownEvent,
-				MouseHookType.WM_RBUTTONUP => RUpEvent,
-				MouseHookType.WM_MBUTTONDOWN => MDownEvent,
-				MouseHookType.WM_MBUTTONUP => MUpEvent,
-				MouseHookType.WM_XBUTTONDOWN when (info & MouseInfo.Mouse4) != 0 => Mouse4DownEvent,
-				MouseHookType.WM_XBUTTONDOWN when (info & MouseInfo.Mouse5) != 0 => Mouse5DownEvent,
-				MouseHookType.WM_XBUTTONUP when (info & MouseInfo.Mouse4) != 0 => Mouse4UpEvent,
-				MouseHookType.WM_XBUTTONUP when (info & MouseInfo.Mouse5) != 0 => Mouse5UpEvent,
-				_ => UnhandledEvent
-			};
+				case MouseHookType.WM_LBUTTONDOWN:
+					Invoke(LDownEvent, this, parameter);
+					break;
+				case MouseHookType.WM_LBUTTONUP:
+					Invoke(LUpEvent, this, parameter);
+					break;
+				case MouseHookType.WM_MOUSEMOVE:
+					Invoke(MoveEvent, this, parameter);
+					break;
+				case MouseHookType.WM_MOUSEWHEEL:
+					Invoke(WheelEvent, this, parameter);
+					break;
+				case MouseHookType.WM_RBUTTONDOWN:
+					Invoke(RDownEvent, this, parameter);
+					break;
+				case MouseHookType.WM_RBUTTONUP:
+					Invoke(RUpEvent, this, parameter);
+					break;
+				case MouseHookType.WM_MBUTTONDOWN:
+					Invoke(MDownEvent, this, parameter);
+					break;
+				case MouseHookType.WM_MBUTTONUP:
+					Invoke(MUpEvent, this, parameter);
+					break;
+				case MouseHookType.WM_XBUTTONDOWN when (info & MouseInfo.Mouse4) != 0:
+					Invoke(Mouse4DownEvent, this, parameter);
+					break;
+				case MouseHookType.WM_XBUTTONDOWN when (info & MouseInfo.Mouse5) != 0:
+					Invoke(Mouse5DownEvent, this, parameter);
+					break;
+				case MouseHookType.WM_XBUTTONUP when (info & MouseInfo.Mouse4) != 0:
+					Invoke(Mouse4UpEvent, this, parameter);
+					break;
+				case MouseHookType.WM_XBUTTONUP when (info & MouseInfo.Mouse5) != 0:
+					Invoke(Mouse5UpEvent, this, parameter);
+					break;
+				default:
+					Invoke(UnhandledEvent, this, parameter);
+					break;
+			}
+		}
 
 
 		internal EventHandler<MouseParameter> GetDoubleClickHandler(MouseInfo info) =>

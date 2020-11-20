@@ -18,12 +18,12 @@ using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHook.Logic
 {
-	internal readonly struct MouseTuple
+	internal readonly struct LowLevelMouseTuple
 	{
 		public readonly MouseHookType Type;
 		public readonly MSLLHOOKSTRUCT HookStruct;
 
-		public MouseTuple(MouseHookType type, MSLLHOOKSTRUCT hookStruct)
+		public LowLevelMouseTuple(MouseHookType type, MSLLHOOKSTRUCT hookStruct)
 		{
 			Type = type;
 			HookStruct = hookStruct;
@@ -34,7 +34,7 @@ namespace BK.Plugins.MouseHook.Logic
 	{
 		private Subject<Unit> _unHookIndicator = new Subject<Unit>();
 		private CompositeDisposable _disposable = new CompositeDisposable();
-		private Subject<MouseTuple> _source = new Subject<MouseTuple>();
+		private Subject<LowLevelMouseTuple> _source = new Subject<LowLevelMouseTuple>();
 
 		public IScheduler ObserveOnScheduler { get; set; }
 		public IScheduler SubscribeOnScheduler { get; set; }
@@ -48,7 +48,7 @@ namespace BK.Plugins.MouseHook.Logic
 			}
 			IsHooked = true;
 			_disposable = new CompositeDisposable();
-			_source	= new Subject<MouseTuple>();
+			_source	= new Subject<LowLevelMouseTuple>();
 			_unHookIndicator = new Subject<Unit>();
 			MouseObservable = new Subject<MouseParameter>();
 
@@ -60,7 +60,7 @@ namespace BK.Plugins.MouseHook.Logic
 			var pipe = _source.Buffer(doubleClickTime, 4);
 
 			pipe.Where(buffer => buffer.Count > 0)
-				.Select(buffer => (List<MouseTuple>)buffer)
+				.Select(buffer => (List<LowLevelMouseTuple>)buffer)
 				.ObserveOn(ObserveOnScheduler)
 				.SubscribeOn(SubscribeOnScheduler)
 				.Subscribe(EvaluateEvents)
@@ -68,8 +68,10 @@ namespace BK.Plugins.MouseHook.Logic
 
 		}
 
+		public Subject<MouseParameter> MouseObservable { get; set; }
 
-		private void EvaluateEvents(List<MouseTuple> buffer)
+
+		private void EvaluateEvents(List<LowLevelMouseTuple> buffer)
 		{
 			Debug.WriteLine($"### started! count: {buffer.Count}");
 
@@ -123,8 +125,8 @@ namespace BK.Plugins.MouseHook.Logic
 			return false;
 		}
 
-		internal override void MouseClickDelegateTemplateMethod(in MouseTuple mouseTuple) => 
-			_source.OnNext(mouseTuple);
+		internal override void MouseClickDelegateTemplateMethod(in LowLevelMouseTuple lowLevelMouseTuple) => 
+			_source.OnNext(lowLevelMouseTuple);
 
 		public override void UnHook()
 		{
@@ -136,21 +138,21 @@ namespace BK.Plugins.MouseHook.Logic
 			_disposable.Dispose();
 		}
 
-		private void GetParameterAndInvoke(in MouseTuple tuple, in MousePoint point, int time, bool isDoubleCLick = false)
+		private void GetParameterAndInvoke(in LowLevelMouseTuple info, in MousePoint point, int time, bool isDoubleCLick = false)
 		{
 			if (isDoubleCLick)
 			{
-				var mouseInfo = _mouseInfoFactory.Create(tuple.Type, tuple.HookStruct);
+				var mouseInfo = _mouseInfoFactory.Create(info.Type, info.HookStruct);
 				var param = MouseParameter.Factory.Create(mouseInfo, point, time).ToDoubleClick();
 				var handler = GetDoubleClickHandler(mouseInfo);
 				Invoke(handler, this, param);
 			}
 			else
 			{
-				var mouseInfo = _mouseInfoFactory.Create(tuple.Type, tuple.HookStruct);
+				var mouseInfo = _mouseInfoFactory.Create(info.Type, info.HookStruct);
 				var param = MouseParameter.Factory.Create(mouseInfo, point, time);
-				var handler = GetHandler(tuple.Type, mouseInfo);
-				Invoke(handler, this, param);
+				//var handler = GetHandler(info.Type, mouseInfo);
+				//Invoke(handler, this, param);
 			}
 		}
 
