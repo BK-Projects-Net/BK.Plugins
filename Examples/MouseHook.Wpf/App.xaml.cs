@@ -22,7 +22,7 @@ namespace MouseHook.Wpf
 			MainWindow = new MainWindow();
 			MainWindow.Show();
 			
-			var hook = BK.Plugins.MouseHook.Logic.MouseHook.Instance;
+			var hook = BK.Plugins.MouseHook.Logic.MouseHookRx.Instance;
 			hook.LDownEvent += HookOnLDownEvent;
 
 			hook.SubscribeOnScheduler = new DispatcherScheduler(Dispatcher);

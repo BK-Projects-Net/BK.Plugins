@@ -1,160 +1,151 @@
 ﻿using System;
-using System.CodeDom;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Reactive;
-using System.Reactive.Concurrency;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Runtime.ExceptionServices;
-using System.Runtime.Remoting.Messaging;
-using System.Windows.Forms;
-using BK.Plugins.MouseHook.Core;
-using BK.Plugins.MouseHook.Extensons;
+using System.Runtime.InteropServices;
 using BK.Plugins.PInvoke;
+using BK.Plugins.MouseHook.Common;
+using BK.Plugins.MouseHook.Core;
 using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHook.Logic
 {
-	internal readonly struct MouseTuple
+	public abstract class MouseHook<T> : Singleton<T> where T : class
 	{
-		public readonly MouseHookType Type;
-		public readonly MSLLHOOKSTRUCT HookStruct;
+		private readonly IUser32 _user32 = new User32();
+		private readonly IKernel32 _kernel32 = new Kernel32();
+		internal readonly MouseInfoFactory _mouseInfoFactory = new MouseInfoFactory();
 
-		public MouseTuple(MouseHookType type, MSLLHOOKSTRUCT hookStruct)
+		private static User32.HookProc _mouseHookProc;
+		private static IntPtr _mouseHook = IntPtr.Zero;
+		private TimeSpan? _doubleClickTime;
+		protected MouseHook()
 		{
-			Type = type;
-			HookStruct = hookStruct;
+			_mouseHookProc = MouseClickDelegate;
 		}
-	}
 
-	public sealed class MouseHook : MouseHookBase<MouseHook>
-	{
-		private Subject<Unit> _unHookIndicator = new Subject<Unit>();
-		private CompositeDisposable _disposable = new CompositeDisposable();
-		private Subject<MouseTuple> _source = new Subject<MouseTuple>();
+		public bool IsHooked { get; protected set; }
 
-		private MouseHook() { }
+		
+		public TimeSpan DoubleClickTime => _doubleClickTime ??= TimeSpan.FromMilliseconds(_user32.GetDoubleClickTime());
+		
+		public Subject<MouseParameter> MouseObservable { get; protected set; }
+		
+		#region Events
+		public event EventHandler<MouseParameter> MoveEvent;
+		public event EventHandler<MouseParameter> LDownEvent;
+		public event EventHandler<MouseParameter> LUpEvent;
+		public event EventHandler<MouseParameter> MDownEvent;
+		public event EventHandler<MouseParameter> MUpEvent;
+		public event EventHandler<MouseParameter> RDownEvent;
+		public event EventHandler<MouseParameter> RUpEvent;
+		public event EventHandler<MouseParameter> WheelEvent;
+		public event EventHandler<MouseParameter> Mouse4UpEvent;
+		public event EventHandler<MouseParameter> Mouse4DownEvent;
+		public event EventHandler<MouseParameter> Mouse5UpEvent;
+		public event EventHandler<MouseParameter> Mouse5DownEvent;
 
-		public IScheduler ObserveOnScheduler { get; set; }
-		public IScheduler SubscribeOnScheduler { get; set; }
+		public event EventHandler<MouseParameter> LDoubleEvent;
+		public event EventHandler<MouseParameter> MDoubleEvent;
+		public event EventHandler<MouseParameter> RDoubleEvent;
+		public event EventHandler<MouseParameter> Mouse4DoubleEvent;
+		public event EventHandler<MouseParameter> Mouse5DoubleEvent;
 
-		public override void SetHook()
+		public event EventHandler<MouseParameter> GlobalEvent;
+		public event EventHandler<MouseParameter> UnhandledEvent;
+		#endregion
+
+		public virtual void UnHook()
 		{
-			if (IsHooked) 
+			_user32.UnhookWindowsHookEx(_mouseHook);
+		}
+
+		/// <summary>
+		/// Make Sure that you Subscribe to this observable **after** you called "SetHook"
+		/// </summary>
+		public virtual void SetHook()
+		{
+			var mouseHook = HookType.WH_MOUSE_LL;
+			_mouseHook = _user32.SetWindowsHookEx((int)mouseHook, _mouseHookProc, IntPtr.Zero, 0);
+			
+			if ((IntPtr) _mouseHook == IntPtr.Zero)
 			{
-				Debug.WriteLine($"### {nameof(MouseHook)}.{nameof(SetHook)}: The hook is already set! If you need a new hook then call {nameof(UnHook)} before you call {nameof(SetHook)}!");
+				var error = Marshal.GetLastWin32Error(); 
+				throw new InvalidComObjectException($"Cannot set the mouse hook! error-code: {error}");
+			}
+		}
+
+		private IntPtr MouseClickDelegate(int code, IntPtr wparam, IntPtr lparam)
+		{
+			var hookType = (MouseHookType)wparam; 
+			var mouseHookStruct = (MSLLHOOKSTRUCT) Marshal.PtrToStructure(lparam, typeof(MSLLHOOKSTRUCT));
+
+			MouseClickDelegateImpl(hookType, mouseHookStruct);
+
+			return (IntPtr)_user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
+		}
+
+		internal void MouseClickDelegateImpl(MouseHookType type, MSLLHOOKSTRUCT mouseHookStruct)
+		{
+			var mouseTuple = new MouseTuple(type, mouseHookStruct);
+			var time = mouseHookStruct.time;
+			var point = new MousePoint(mouseHookStruct.pt.X, mouseHookStruct.pt.Y);
+
+			if (type == MouseHookType.WM_MOUSEMOVE)
+			{
+				var info = _mouseInfoFactory.Create(type, mouseHookStruct);
+				var param = MouseParameter.Factory.Create(info, point, time);
+				Invoke(MoveEvent, this, param);
 				return;
 			}
-			IsHooked = true;
-			_disposable = new CompositeDisposable();
-			_source	= new Subject<MouseTuple>();
-			_unHookIndicator = new Subject<Unit>();
-			MouseObservable = new Subject<MouseParameter>();
-
-			base.SetHook();
-
-			var tolerance = DoubleClickTime.Ticks / 100 * 100 * 2;
-			var doubleClickTime = TimeSpan.FromTicks(DoubleClickTime.Ticks + tolerance);
-
-			var pipe = _source.Buffer(doubleClickTime, 4);
-
-			pipe.Where(buffer => buffer.Count > 0)
-				.Select(buffer => (List<MouseTuple>)buffer)
-				.ObserveOn(ObserveOnScheduler)
-				.SubscribeOn(SubscribeOnScheduler)
-				.Subscribe(EvaluateEvents)
-				.DisposeWith(_disposable);
-
-		}
-
-
-		private void EvaluateEvents(List<MouseTuple> buffer)
-		{
-			Debug.WriteLine($"### started! count: {buffer.Count}");
-
-			var rest = buffer.Count % 4;
-			bool hasLeftOver = rest != 0;
-			int count = hasLeftOver ? buffer.Count - rest : buffer.Count;
-
-			// pairwise iteration of 4 items 
-			for (int index = 0; index < count; index += 4)
+			if (type == MouseHookType.WM_MOUSEWHEEL)
 			{
-				var item1 = buffer[index];
-				var item2 = buffer[index + 1];
-				var item3 = buffer[index + 2];
-				var item4 = buffer[index + 3];
-
-				// double click
-				if (IsDoubleClick(item1.Type, item3.Type))
-				{
-					GetParameterAndInvoke(item1, item1.HookStruct.GetMousePoint(), item1.HookStruct.time,true);
-				}
-				else // single click
-				{
-					GetParameterAndInvoke(item1, item1.HookStruct.GetMousePoint(), item1.HookStruct.time);
-					GetParameterAndInvoke(item2, item2.HookStruct.GetMousePoint(), item2.HookStruct.time);
-					GetParameterAndInvoke(item3, item3.HookStruct.GetMousePoint(), item3.HookStruct.time);
-					GetParameterAndInvoke(item4, item4.HookStruct.GetMousePoint(), item4.HookStruct.time);
-				}
+				var wheelInfo = _mouseInfoFactory.Create(type, mouseHookStruct);
+				var param = MouseParameter.Factory.Create(wheelInfo, point, time);
+				Invoke(WheelEvent, this, param);
+				return;
 			}
+			
+			MouseClickDelegateTemplateMethod(in mouseTuple);
 
-			// last item if uneven
-			if (hasLeftOver)
+		}
+
+		internal abstract void MouseClickDelegateTemplateMethod(in MouseTuple mouseTuple);
+
+		internal EventHandler<MouseParameter> GetHandler(MouseHookType key, in MouseInfo info) =>
+			key switch
 			{
-				// TODO: Use getrange for performance
-				var leftOver = buffer.Skip(count).Take(rest);
-				foreach (var pair in leftOver)
-				{
-					GetParameterAndInvoke(pair, pair.HookStruct.GetMousePoint(), pair.HookStruct.time);
-				}
+				MouseHookType.WM_LBUTTONDOWN => LDownEvent,
+				MouseHookType.WM_LBUTTONUP => LUpEvent,
+				MouseHookType.WM_MOUSEMOVE => MoveEvent,
+				MouseHookType.WM_MOUSEWHEEL => WheelEvent,
+				MouseHookType.WM_RBUTTONDOWN => RDownEvent,
+				MouseHookType.WM_RBUTTONUP => RUpEvent,
+				MouseHookType.WM_MBUTTONDOWN => MDownEvent,
+				MouseHookType.WM_MBUTTONUP => MUpEvent,
+				MouseHookType.WM_XBUTTONDOWN when (info & MouseInfo.Mouse4) != 0 => Mouse4DownEvent,
+				MouseHookType.WM_XBUTTONDOWN when (info & MouseInfo.Mouse5) != 0 => Mouse5DownEvent,
+				MouseHookType.WM_XBUTTONUP when (info & MouseInfo.Mouse4) != 0 => Mouse4UpEvent,
+				MouseHookType.WM_XBUTTONUP when (info & MouseInfo.Mouse5) != 0 => Mouse5UpEvent,
+				_ => UnhandledEvent
+			};
 
-			}
 
-			Debug.WriteLine($"### End");
-		}
-
-		private static bool IsDoubleClick(MouseHookType type1, MouseHookType type2)
-		{
-			if (type1 == MouseHookType.WM_LBUTTONDOWN && type2 == MouseHookType.WM_LBUTTONDOWN) return true;
-			if (type1 == MouseHookType.WM_MBUTTONDOWN && type2 == MouseHookType.WM_MBUTTONDOWN) return true;
-			if (type1 == MouseHookType.WM_RBUTTONDOWN && type2 == MouseHookType.WM_RBUTTONDOWN) return true;
-			if (type1 == MouseHookType.WM_XBUTTONDOWN && type2 == MouseHookType.WM_XBUTTONDOWN) return true;
-			return false;
-		}
-
-		internal override void MouseClickDelegateTemplateMethod(in MouseTuple mouseTuple) => 
-			_source.OnNext(mouseTuple);
-
-		public override void UnHook()
-		{
-			if(!IsHooked) return;
-			IsHooked = false;
-			base.UnHook();
-			_unHookIndicator.OnNext(Unit.Default);
-			_unHookIndicator.OnCompleted();
-			_disposable.Dispose();
-		}
-
-		private void GetParameterAndInvoke(in MouseTuple tuple, in MousePoint point, int time, bool isDoubleCLick = false)
-		{
-			if (isDoubleCLick)
+		internal EventHandler<MouseParameter> GetDoubleClickHandler(MouseInfo info) =>
+			info switch
 			{
-				var mouseInfo = _mouseInfoFactory.Create(tuple.Type, tuple.HookStruct);
-				var param = MouseParameter.Factory.Create(mouseInfo, point, time).ToDoubleClick();
-				var handler = GetDoubleClickHandler(mouseInfo);
-				Invoke(handler, this, param);
-			}
-			else
-			{
-				var mouseInfo = _mouseInfoFactory.Create(tuple.Type, tuple.HookStruct);
-				var param = MouseParameter.Factory.Create(mouseInfo, point, time);
-				var handler = GetHandler(tuple.Type, mouseInfo);
-				Invoke(handler, this, param);
-			}
-		}
+				MouseInfo.LeftButton => LDoubleEvent,
+				MouseInfo.MiddleButton => MDoubleEvent,
+				MouseInfo.RightButton => RDoubleEvent,
+				MouseInfo.Mouse4 => Mouse4DoubleEvent,
+				MouseInfo.Mouse5 => Mouse5DoubleEvent,
+				_ => UnhandledEvent
+			};
 
+		protected void Invoke(EventHandler<MouseParameter> handler, object sender, MouseParameter param)
+		{
+			handler?.Invoke(sender, param);
+			GlobalEvent?.Invoke(sender, param);
+			if(MouseObservable.HasObservers)
+				MouseObservable.OnNext(param);
+		}
 	}
 }

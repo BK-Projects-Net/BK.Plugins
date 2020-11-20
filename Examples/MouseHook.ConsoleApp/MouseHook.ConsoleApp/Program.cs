@@ -28,7 +28,7 @@ namespace MouseHook.ConsoleApp
 	{
 		public AppContext()
 		{
-			var hook = BK.Plugins.MouseHook.Logic.MouseHook.Instance;
+			var hook = BK.Plugins.MouseHook.Logic.MouseHookRx.Instance;
 			//HookAllEventHandlers(hook);
 			// HookGlobalEventHandler(hook);
 
@@ -37,37 +37,37 @@ namespace MouseHook.ConsoleApp
 			
 		}
 
-		private void HookObservable(BK.Plugins.MouseHook.Logic.MouseHook hook)
+		private void HookObservable(BK.Plugins.MouseHook.Logic.MouseHookRx hookRx)
 		{
-			hook.MouseObservable.Subscribe(param =>
+			hookRx.MouseObservable.Subscribe(param =>
 			{
 				Console.WriteLine(param);
 			});
 		}
 
-		private void HookAllEventHandlers(BK.Plugins.MouseHook.Logic.MouseHook hook)
+		private void HookAllEventHandlers(BK.Plugins.MouseHook.Logic.MouseHookRx hookRx)
 		{
-			hook.LDownEvent += OnLDownEvent;
-			hook.LUpEvent += OnLUpEvent;
-			hook.LDoubleEvent += OnLDoubleEvent;
+			hookRx.LDownEvent += OnLDownEvent;
+			hookRx.LUpEvent += OnLUpEvent;
+			hookRx.LDoubleEvent += OnLDoubleEvent;
 
-			hook.MDownEvent += OnMDownEvent;
-			hook.MUpEvent += OnMUpEvent;
-			hook.MDoubleEvent += OnMDoubleEvent;
+			hookRx.MDownEvent += OnMDownEvent;
+			hookRx.MUpEvent += OnMUpEvent;
+			hookRx.MDoubleEvent += OnMDoubleEvent;
 
-			hook.RDownEvent += OnRDownEvent;
-			hook.RUpEvent += OnRUpEvent;
-			hook.RDoubleEvent += OnRDoubleEvent;
+			hookRx.RDownEvent += OnRDownEvent;
+			hookRx.RUpEvent += OnRUpEvent;
+			hookRx.RDoubleEvent += OnRDoubleEvent;
 
-			hook.MoveEvent += OnMoveEvent;
-			hook.WheelEvent += OnWheelEvent;
+			hookRx.MoveEvent += OnMoveEvent;
+			hookRx.WheelEvent += OnWheelEvent;
 
-			hook.UnhandledEvent += OnUnhandledEvent;
+			hookRx.UnhandledEvent += OnUnhandledEvent;
 		}
 
-		private void HookGlobalEventHandler(BK.Plugins.MouseHook.Logic.MouseHook hook)
+		private void HookGlobalEventHandler(BK.Plugins.MouseHook.Logic.MouseHookRx hookRx)
 		{
-			hook.GlobalEvent += OnGlobalEvent;
+			hookRx.GlobalEvent += OnGlobalEvent;
 		}
 
 		#region Handlers
