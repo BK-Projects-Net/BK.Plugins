@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Disposables;
-using System.Text;
-using System.Threading.Tasks;
-using BK.Plugins.MouseHook.Core;
-using BK.Plugins.PInvoke.Core;
 
-namespace BK.Plugins.MouseHook.Extensons
+namespace BK.Plugins.MouseHookRx
 {
 	internal static class DisposableExtensions
 	{

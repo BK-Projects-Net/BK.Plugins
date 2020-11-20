@@ -57,12 +57,6 @@
     <Compile Include="PInvokeExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BK.Plugins.CreationalHelpers\BK.Plugins.CreationalHelpers.csproj">
-      <Project>{efcec88c-ff19-45da-8bed-2d68535babcd}</Project>
-      <Name>BK.Plugins.CreationalHelpers</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Content Include="TODO.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

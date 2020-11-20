@@ -8,7 +8,6 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using BK.Plugins.MouseHook.Core;
-using BK.Plugins.MouseHook.Extensons;
 using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHookRx
@@ -19,16 +18,29 @@ namespace BK.Plugins.MouseHookRx
 		private CompositeDisposable _disposable = new CompositeDisposable();
 		private Subject<(LowLevelMouseInfo info, MouseParameter parameter)> _source = new Subject<(LowLevelMouseInfo info, MouseParameter parameter)>();
 
+		public Subject<MouseParameter> MouseObservable { get; private set; }
 		public IScheduler ObserveOnScheduler { get; set; }
 		public IScheduler SubscribeOnScheduler { get; set; }
 
+		public event EventHandler<MouseParameter> LDoubleEvent;
+		public event EventHandler<MouseParameter> MDoubleEvent;
+		public event EventHandler<MouseParameter> RDoubleEvent;
+		public event EventHandler<MouseParameter> Mouse4DoubleEvent;
+		public event EventHandler<MouseParameter> Mouse5DoubleEvent;
+
+
+		/// <summary>
+		/// subscribe to "MouseObservable" after setting the hook via "SetHook"
+		/// </summary>
 		public override void SetHook()
 		{
 			if (IsHooked)
 			{
-				Debug.WriteLine($"### {nameof(MouseHookRx)}.{nameof(SetHook)}: The hook is already set! If you need a new hook then call {nameof(UnHook)} before you call {nameof(SetHook)}!");
+				Debug.WriteLine(
+					$"### {nameof(MouseHookRx)}.{nameof(SetHook)}: The hook is already set! If you need a new hook then call {nameof(UnHook)} before you call {nameof(SetHook)}!");
 				return;
 			}
+
 			IsHooked = true;
 			_disposable = new CompositeDisposable();
 			_source = new Subject<(LowLevelMouseInfo info, MouseParameter parameter)>();
@@ -42,21 +54,21 @@ namespace BK.Plugins.MouseHookRx
 
 			var pipe = _source.Buffer(doubleClickTime, 4);
 
-			pipe.Where(buffer => buffer.Count > 0)
-				.Select(buffer => (List<(LowLevelMouseInfo, MouseParameter)>)buffer)
-				.ObserveOn(ObserveOnScheduler)
-				.SubscribeOn(SubscribeOnScheduler)
-				.Subscribe(EvaluateEvents)
+			pipe.Where(buffer => buffer.Count > 0);
+
+			if(ObserveOnScheduler != null)
+				pipe = pipe.ObserveOn(ObserveOnScheduler);
+			if(SubscribeOnScheduler != null)
+				pipe = pipe.SubscribeOn(SubscribeOnScheduler);
+			
+			pipe.Subscribe(buffer => EvaluateEvents((List<(LowLevelMouseInfo, MouseParameter)>)buffer))
 				.DisposeWith(_disposable);
 
 		}
 
-		public Subject<MouseParameter> MouseObservable { get; private set; }
-
-
 		private void EvaluateEvents(List<(LowLevelMouseInfo info, MouseParameter parameter)> buffer)
 		{
-			Debug.WriteLine($"### started! count: {buffer.Count}"); 
+			Debug.WriteLine($"### started! count: {buffer.Count}");
 
 			var rest = buffer.Count % 4;
 			bool hasLeftOver = rest != 0;
@@ -119,7 +131,6 @@ namespace BK.Plugins.MouseHookRx
 			base.UnHook();
 			_unHookIndicator.OnNext(Unit.Default);
 			_unHookIndicator.OnCompleted();
-			_disposable.Dispose();
 		}
 
 		private void GetParameterAndInvoke(in LowLevelMouseInfo info, in MouseParameter parameter, bool isDoubleClick)
@@ -172,10 +183,11 @@ namespace BK.Plugins.MouseHookRx
 				MouseObservable.OnNext(param);
 		}
 
-		public event EventHandler<MouseParameter> LDoubleEvent;
-		public event EventHandler<MouseParameter> MDoubleEvent;
-		public event EventHandler<MouseParameter> RDoubleEvent;
-		public event EventHandler<MouseParameter> Mouse4DoubleEvent;
-		public event EventHandler<MouseParameter> Mouse5DoubleEvent;
+		public override void Dispose()
+		{
+			base.Dispose();
+			if (!_disposable.IsDisposed) _disposable.Dispose();
+		}
+
 	}
 }

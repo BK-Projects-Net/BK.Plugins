@@ -9,7 +9,7 @@ namespace BK.Plugins.MouseHook
 	public abstract class MouseHook : IDisposable
 	{
 		private readonly IUser32 _user32 = new User32();
-		internal readonly MouseInfoFactory _mouseInfoFactory = new MouseInfoFactory();
+		private readonly MouseInfoFactory _mouseInfoFactory = new MouseInfoFactory();
 
 		private User32.HookProc _mouseHookProc;
 		private GCHandle _mouseHookProcHandle;	// used to pin an instance to not get GC // has to be released
@@ -36,12 +36,6 @@ namespace BK.Plugins.MouseHook
 		public event EventHandler<MouseParameter> UnhandledEvent;
 		#endregion
 
-		public virtual void UnHook()
-		{
-			_mouseHookProcHandle.Free();
-			_user32.UnhookWindowsHookEx(_mouseHook);
-		}
-
 		public virtual void SetHook()
 		{
 			_mouseHookProc = MouseClickDelegate;
@@ -49,12 +43,18 @@ namespace BK.Plugins.MouseHook
 
 			var mouseHook = HookType.WH_MOUSE_LL;
 			_mouseHook = _user32.SetWindowsHookEx((int)mouseHook, _mouseHookProc, IntPtr.Zero, 0);
-			
+
 			if (_mouseHook == IntPtr.Zero)
 			{
-				var error = Marshal.GetLastWin32Error(); 
+				var error = Marshal.GetLastWin32Error();
 				throw new InvalidComObjectException($"Cannot set the mouse hook! error: {error}");
 			}
+		}
+
+		public virtual void UnHook()
+		{
+			_mouseHookProcHandle.Free();
+			_user32.UnhookWindowsHookEx(_mouseHook);
 		}
 
 		private IntPtr MouseClickDelegate(int code, IntPtr wparam, IntPtr lparam)
@@ -76,19 +76,14 @@ namespace BK.Plugins.MouseHook
 			var parameter = MouseParameter.Factory.Create(info, point, time);
 
 			MouseClickDelegateOverride(mouseTuple, parameter);
-			//MouseClickDelegateTemplateMethod(in mouseTuple); // TODO: remove this later
-
 		}
-
-		//// TODO: get rid of this later
-		//internal abstract void MouseClickDelegateTemplateMethod(in LowLevelMouseTuple lowLevelMouseTuple);
 
 		/// <summary>
 		/// do not call the base implementation when overriding this
 		/// otherwise the events will be invoked 2 times for the concretion
 		/// </summary>
-		/// <param name="parameter"></param>
-		internal virtual void MouseClickDelegateOverride(in LowLevelMouseInfo info, in MouseParameter parameter) => InvokeHandler(info.Type,this, parameter);
+		internal virtual void MouseClickDelegateOverride(in LowLevelMouseInfo info, in MouseParameter parameter) =>
+			InvokeHandler(info.Type,this, parameter);
 
 		protected void InvokeHandler(MouseHookType key, object sender, in MouseParameter parameter)
 		{
@@ -145,14 +140,11 @@ namespace BK.Plugins.MouseHook
 		{
 			handler?.Invoke(sender, param);
 			GlobalEvent?.Invoke(sender, param);
-			//if(MouseObservable.HasObservers)
-			//	MouseObservable.OnNext(param);
 		}
 
 		public virtual void Dispose()
 		{
 			if (!IsHooked) return;
-			//MouseObservable?.Dispose();
 			UnHook();
 		}
 	}

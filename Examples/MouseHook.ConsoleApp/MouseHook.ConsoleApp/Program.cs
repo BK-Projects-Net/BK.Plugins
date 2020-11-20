@@ -24,11 +24,10 @@ namespace MouseHook.ConsoleApp
 		public AppContext()
 		{
 			var hook = new MouseHookRx();
-			HookAllEventHandlers(hook);
-
 			hook.SetHook();
+
+			//HookAllEventHandlers(hook);
 			HookObservable(hook);
-			
 		}
 
 		private void HookObservable(MouseHookRx hookRx) => 
