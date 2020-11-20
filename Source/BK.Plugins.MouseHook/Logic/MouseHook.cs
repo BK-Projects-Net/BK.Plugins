@@ -32,7 +32,6 @@ namespace BK.Plugins.MouseHook.Logic
 
 	public sealed class MouseHook : MouseHookBase<MouseHook>
 	{
-		
 		private Subject<Unit> _unHookIndicator = new Subject<Unit>();
 		private CompositeDisposable _disposable = new CompositeDisposable();
 		private Subject<MouseTuple> _source = new Subject<MouseTuple>();
@@ -62,13 +61,10 @@ namespace BK.Plugins.MouseHook.Logic
 
 			var pipe = _source.Buffer(doubleClickTime, 4);
 
-			if (ObserveOnScheduler != null)
-				pipe.ObserveOn(ObserveOnScheduler);
-			if (SubscribeOnScheduler != null)
-				pipe.SubscribeOn(SubscribeOnScheduler);
-
 			pipe.Where(buffer => buffer.Count > 0)
 				.Select(buffer => (List<MouseTuple>)buffer)
+				.ObserveOn(ObserveOnScheduler)
+				.SubscribeOn(SubscribeOnScheduler)
 				.Subscribe(EvaluateEvents)
 				.DisposeWith(_disposable);
 

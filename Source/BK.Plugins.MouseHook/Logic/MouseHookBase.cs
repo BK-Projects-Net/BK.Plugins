@@ -26,10 +26,10 @@ namespace BK.Plugins.MouseHook.Logic
 
 		
 		public TimeSpan DoubleClickTime => _doubleClickTime ??= TimeSpan.FromMilliseconds(_user32.GetDoubleClickTime());
-		/// <summary>
-		/// Make Sure that you Subscribe to this observable **after** you called "SetHook"
-		/// </summary>
+		
 		public Subject<MouseParameter> MouseObservable { get; protected set; }
+		
+		#region Events
 		public event EventHandler<MouseParameter> MoveEvent;
 		public event EventHandler<MouseParameter> LDownEvent;
 		public event EventHandler<MouseParameter> LUpEvent;
@@ -49,15 +49,18 @@ namespace BK.Plugins.MouseHook.Logic
 		public event EventHandler<MouseParameter> Mouse4DoubleEvent;
 		public event EventHandler<MouseParameter> Mouse5DoubleEvent;
 
-
 		public event EventHandler<MouseParameter> GlobalEvent;
 		public event EventHandler<MouseParameter> UnhandledEvent;
+		#endregion
 
 		public virtual void UnHook()
 		{
 			_user32.UnhookWindowsHookEx(_mouseHook);
 		}
 
+		/// <summary>
+		/// Make Sure that you Subscribe to this observable **after** you called "SetHook"
+		/// </summary>
 		public virtual void SetHook()
 		{
 			var mouseHook = HookType.WH_MOUSE_LL;

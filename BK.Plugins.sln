@@ -26,6 +26,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{E5419F
 		Directory.Build.props = Directory.Build.props
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MouseHook.Wpf", "Examples\MouseHook.Wpf\MouseHook.Wpf.csproj", "{40E5D991-6B47-4E14-9486-F08926A5E6A9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,6 +62,10 @@ Global
 		{7A37C1D4-067A-4F5C-819B-57CCB29F33DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7A37C1D4-067A-4F5C-819B-57CCB29F33DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7A37C1D4-067A-4F5C-819B-57CCB29F33DF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40E5D991-6B47-4E14-9486-F08926A5E6A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40E5D991-6B47-4E14-9486-F08926A5E6A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40E5D991-6B47-4E14-9486-F08926A5E6A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40E5D991-6B47-4E14-9486-F08926A5E6A9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -72,6 +78,7 @@ Global
 		{80A8A18C-5E45-4228-B440-668DAACB81DA} = {7B1320D4-45B6-49AE-BF45-AB22ACE18336}
 		{8A2BA79C-3621-4F60-BA3A-9653283041B6} = {E5419FBC-5386-4315-A38B-E0F8A651D61C}
 		{7A37C1D4-067A-4F5C-819B-57CCB29F33DF} = {7B1320D4-45B6-49AE-BF45-AB22ACE18336}
+		{40E5D991-6B47-4E14-9486-F08926A5E6A9} = {7F321CD4-22F2-4A21-A159-4C598EAB5BCE}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {590ADB65-5B13-446C-88AA-08198831BF30}

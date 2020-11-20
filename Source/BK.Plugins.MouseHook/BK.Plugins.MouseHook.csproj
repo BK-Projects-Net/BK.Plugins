@@ -3,7 +3,7 @@
   <!-- nuget and versioning -->
   <PropertyGroup>
     <PackageId>BK.Plugins.MouseHook</PackageId>
-    <Version>1.0.0.7</Version>
+    <Version>1.0.0.8</Version>
     <Authors>Brayan Khosravian</Authors>
     <Company>Brayan Khosravian</Company>
     <Description>A global mouse hook for windows</Description>
@@ -23,26 +23,22 @@
   </PropertyGroup>
   <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
     <ItemGroup>
-      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths->WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))"/>
+      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
     </ItemGroup>
   </Target>
   
   <!-- package refs -->
   <ItemGroup>
-    <PackageReference Include="System.Reactive" Version="4.4.1"/>
-    <PackageReference Include="NuGet.Build.Tasks.Pack" Version="5.2.0"/>
+    <PackageReference Include="System.Reactive" Version="4.4.1" />
+    <PackageReference Include="NuGet.Build.Tasks.Pack" Version="5.2.0" />
   </ItemGroup>
 
   <!-- project refs -->
   <ItemGroup>
-    <ProjectReference Include="..\BK.Plugins.PInvoke\BK.Plugins.PInvoke.csproj" >
+    <ProjectReference Include="..\BK.Plugins.PInvoke\BK.Plugins.PInvoke.csproj">
       <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
       <IncludeAssets>BK.Plugins.PInvoke.dll</IncludeAssets>
     </ProjectReference>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Properties\" />
   </ItemGroup>
 
 </Project>
