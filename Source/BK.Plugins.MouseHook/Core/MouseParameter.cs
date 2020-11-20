@@ -21,17 +21,18 @@ namespace BK.Plugins.MouseHook.Core
 			Guid = guid;
 		}
 
-		public override readonly string ToString() => 
+		public override string ToString() => 
 			$"Guid: {Guid:D}, Time: {DateTime:G}, Action: {MouseInfo:G}, {Position.ToString()}";
 
 		public bool Is(MouseInfo info) => (MouseInfo & info) != 0;
 
-		internal MouseParameter ToDoubleClick() => 
-			new MouseParameter(MouseInfo | MouseInfo.Double, Position, DateTime, Guid);
-
-		internal readonly struct Factory
+		public readonly struct Factory
 		{
-			internal static MouseParameter Create(MouseInfo info, MousePoint point, int time) => new MouseParameter(info, point, DateTime.Today + TimeSpan.FromTicks(time), System.Guid.NewGuid());
+			public static MouseParameter Create(MouseInfo info, MousePoint point, int ticks) => 
+				new MouseParameter(info, point, DateTime.Today + TimeSpan.FromTicks(ticks), Guid.NewGuid());
+			
+			public static MouseParameter CreateHasDoubleClick(MouseInfo info, MousePoint point, int ticks) =>
+				new MouseParameter(info | MouseInfo.Double, point, DateTime.Today + TimeSpan.FromTicks(ticks), Guid.NewGuid());
 		}
 	}
 }

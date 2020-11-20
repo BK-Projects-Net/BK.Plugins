@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using BK.Plugins.PInvoke;
-using BK.Plugins.MouseHook.Common;
 using BK.Plugins.MouseHook.Core;
+using BK.Plugins.PInvoke;
 using BK.Plugins.PInvoke.Core;
 
-namespace BK.Plugins.MouseHook.Logic
+namespace BK.Plugins.MouseHook
 {
 	public abstract class MouseHook : IDisposable
 	{
@@ -18,8 +17,7 @@ namespace BK.Plugins.MouseHook.Logic
 
 		public bool IsHooked { get; protected set; }
 		public TimeSpan DoubleClickTime => TimeSpan.FromMilliseconds(_user32.GetDoubleClickTime());
-		//public Subject<MouseParameter> MouseObservable { get; protected set; }
-		
+
 		#region Events
 		public event EventHandler<MouseParameter> MoveEvent;
 		public event EventHandler<MouseParameter> LDownEvent;
@@ -44,9 +42,6 @@ namespace BK.Plugins.MouseHook.Logic
 			_user32.UnhookWindowsHookEx(_mouseHook);
 		}
 
-		/// <summary>
-		/// Make Sure that you Subscribe to this observable **after** you called "SetHook"
-		/// </summary>
 		public virtual void SetHook()
 		{
 			_mouseHookProc = MouseClickDelegate;
@@ -74,28 +69,26 @@ namespace BK.Plugins.MouseHook.Logic
 
 		internal void MouseClickDelegateImpl(MouseHookType type, MSLLHOOKSTRUCT mouseHookStruct)
 		{
-			var mouseTuple = new LowLevelMouseTuple(type, mouseHookStruct); // TODO: get rid of this later
+			var mouseTuple = new LowLevelMouseInfo(type, mouseHookStruct); // TODO: get rid of this later
 			var time = mouseHookStruct.time;
 			var point = new MousePoint(mouseHookStruct.pt.X, mouseHookStruct.pt.Y);
 			var info = _mouseInfoFactory.Create(type, mouseHookStruct);
 			var parameter = MouseParameter.Factory.Create(info, point, time);
 
 			MouseClickDelegateOverride(mouseTuple, parameter);
-			MouseClickDelegateTemplateMethod(in mouseTuple); // TODO: remove this later
+			//MouseClickDelegateTemplateMethod(in mouseTuple); // TODO: remove this later
 
 		}
 
-		// TODO: get rid of this later
-		internal abstract void MouseClickDelegateTemplateMethod(in LowLevelMouseTuple lowLevelMouseTuple);
+		//// TODO: get rid of this later
+		//internal abstract void MouseClickDelegateTemplateMethod(in LowLevelMouseTuple lowLevelMouseTuple);
 
 		/// <summary>
 		/// do not call the base implementation when overriding this
+		/// otherwise the events will be invoked 2 times for the concretion
 		/// </summary>
 		/// <param name="parameter"></param>
-		internal virtual void MouseClickDelegateOverride(in LowLevelMouseTuple tuple, in MouseParameter parameter)
-		{
-			InvokeHandler(tuple.Type,this, parameter);
-		}
+		internal virtual void MouseClickDelegateOverride(in LowLevelMouseInfo info, in MouseParameter parameter) => InvokeHandler(info.Type,this, parameter);
 
 		protected void InvokeHandler(MouseHookType key, object sender, in MouseParameter parameter)
 		{

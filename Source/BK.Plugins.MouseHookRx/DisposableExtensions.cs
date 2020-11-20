@@ -18,9 +18,4 @@ namespace BK.Plugins.MouseHook.Extensons
 		}
 
 	}
-
-	internal static class MSLLHOOKSTRUCTExtensions
-	{
-		public static MousePoint GetMousePoint(this MSLLHOOKSTRUCT s) => new MousePoint(s.pt.X, s.pt.Y);
-	}
 }

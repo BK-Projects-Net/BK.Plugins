@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using BK.Plugins.MouseHook.Core;
-using BK.Plugins.MouseHook.Logic;
 using System.Windows.Forms;
+using BK.Plugins.MouseHookRx;
 
 // https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.application.run?view=netcore-3.1#System_Windows_Forms_Application_Run_System_Windows_Forms_ApplicationContext_
 
@@ -29,63 +24,40 @@ namespace MouseHook.ConsoleApp
 		public AppContext()
 		{
 			var hook = new MouseHookRx();
-			//HookAllEventHandlers(hook);
-			// HookGlobalEventHandler(hook);
+			HookAllEventHandlers(hook);
 
 			hook.SetHook();
 			HookObservable(hook);
 			
 		}
 
-		private void HookObservable(BK.Plugins.MouseHook.Logic.MouseHookRx hookRx)
+		private void HookObservable(MouseHookRx hookRx) => 
+			hookRx.MouseObservable
+				.Subscribe(param => Console.WriteLine(param));
+
+		private void HookAllEventHandlers(MouseHookRx hookRx)
 		{
-			hookRx.MouseObservable.Subscribe(param =>
-			{
-				Console.WriteLine(param);
-			});
+			hookRx.LDownEvent += OnInvoke;
+			hookRx.LUpEvent += OnInvoke;
+			hookRx.LDoubleEvent += OnInvoke;
+
+			hookRx.MDownEvent += OnInvoke;
+			hookRx.MUpEvent += OnInvoke;
+			hookRx.MDoubleEvent += OnInvoke;
+
+			hookRx.RDownEvent += OnInvoke;
+			hookRx.RUpEvent += OnInvoke;
+			hookRx.RDoubleEvent += OnInvoke;
+
+			hookRx.MoveEvent += OnInvoke;
+			hookRx.WheelEvent += OnInvoke;
+
+			hookRx.UnhandledEvent += OnInvoke;
+			hookRx.GlobalEvent += OnInvoke;
 		}
 
-		private void HookAllEventHandlers(BK.Plugins.MouseHook.Logic.MouseHookRx hookRx)
-		{
-			hookRx.LDownEvent += OnLDownEvent;
-			hookRx.LUpEvent += OnLUpEvent;
-			hookRx.LDoubleEvent += OnLDoubleEvent;
+		private void OnInvoke(object sender, MouseParameter e) => Console.WriteLine(e);
 
-			hookRx.MDownEvent += OnMDownEvent;
-			hookRx.MUpEvent += OnMUpEvent;
-			hookRx.MDoubleEvent += OnMDoubleEvent;
-
-			hookRx.RDownEvent += OnRDownEvent;
-			hookRx.RUpEvent += OnRUpEvent;
-			hookRx.RDoubleEvent += OnRDoubleEvent;
-
-			hookRx.MoveEvent += OnMoveEvent;
-			hookRx.WheelEvent += OnWheelEvent;
-
-			hookRx.UnhandledEvent += OnUnhandledEvent;
-		}
-
-		private void HookGlobalEventHandler(BK.Plugins.MouseHook.Logic.MouseHookRx hookRx)
-		{
-			hookRx.GlobalEvent += OnGlobalEvent;
-		}
-
-		#region Handlers
-		private void OnGlobalEvent(object sender, MouseParameter e) => Console.WriteLine(e);
-		private void OnUnhandledEvent(object sender, MouseParameter e) => Console.WriteLine(e);
-		private void OnWheelEvent(object sender, MouseParameter e) => Console.WriteLine(e);
-		private void OnMoveEvent(object sender, MouseParameter e) => Console.WriteLine(e);
-		private void OnRUpEvent(object sender, MouseParameter e) => Console.WriteLine(e);
-		private void OnRDownEvent(object sender, MouseParameter e) => Console.WriteLine(e);
-		private void OnMUpEvent(object sender, MouseParameter e) => Console.WriteLine(e);
-		private void OnMDownEvent(object sender, MouseParameter e) => Console.WriteLine(e);
-		private void OnLUpEvent(object sender, MouseParameter e) => Console.WriteLine(e);
-		private void OnLDownEvent(object sender, MouseParameter e) => Console.WriteLine(e);
-		private void OnLDoubleEvent(object sender, MouseParameter e) => Console.WriteLine(e);
-		private void OnMDoubleEvent(object sender, MouseParameter e) => Console.WriteLine(e);
-		private void OnRDoubleEvent(object sender, MouseParameter e) => Console.WriteLine(e);
-
-		#endregion
 		
 	}
 }

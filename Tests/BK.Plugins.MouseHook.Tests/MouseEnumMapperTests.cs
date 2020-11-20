@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Windows.Forms;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using BK.Plugins.MouseHook;
-using BK.Plugins.MouseHook.Common;
 using BK.Plugins.MouseHook.Core;
 using BK.Plugins.PInvoke;
 using BK.Plugins.PInvoke.Core;

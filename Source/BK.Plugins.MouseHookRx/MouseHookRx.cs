@@ -1,5 +1,4 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -8,47 +7,31 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Runtime.ExceptionServices;
-using System.Runtime.Remoting.Messaging;
-using System.Windows.Forms;
 using BK.Plugins.MouseHook.Core;
 using BK.Plugins.MouseHook.Extensons;
-using BK.Plugins.PInvoke;
 using BK.Plugins.PInvoke.Core;
 
-namespace BK.Plugins.MouseHook.Logic
+namespace BK.Plugins.MouseHookRx
 {
-	internal readonly struct LowLevelMouseTuple
-	{
-		public readonly MouseHookType Type;
-		public readonly MSLLHOOKSTRUCT HookStruct;
-
-		public LowLevelMouseTuple(MouseHookType type, MSLLHOOKSTRUCT hookStruct)
-		{
-			Type = type;
-			HookStruct = hookStruct;
-		}
-	}
-
-	public sealed class MouseHookRx : MouseHook
+	public sealed class MouseHookRx : MouseHook.MouseHook
 	{
 		private Subject<Unit> _unHookIndicator = new Subject<Unit>();
 		private CompositeDisposable _disposable = new CompositeDisposable();
-		private Subject<LowLevelMouseTuple> _source = new Subject<LowLevelMouseTuple>();
+		private Subject<(LowLevelMouseInfo info, MouseParameter parameter)> _source = new Subject<(LowLevelMouseInfo info, MouseParameter parameter)>();
 
 		public IScheduler ObserveOnScheduler { get; set; }
 		public IScheduler SubscribeOnScheduler { get; set; }
 
 		public override void SetHook()
 		{
-			if (IsHooked) 
+			if (IsHooked)
 			{
 				Debug.WriteLine($"### {nameof(MouseHookRx)}.{nameof(SetHook)}: The hook is already set! If you need a new hook then call {nameof(UnHook)} before you call {nameof(SetHook)}!");
 				return;
 			}
 			IsHooked = true;
 			_disposable = new CompositeDisposable();
-			_source	= new Subject<LowLevelMouseTuple>();
+			_source = new Subject<(LowLevelMouseInfo info, MouseParameter parameter)>();
 			_unHookIndicator = new Subject<Unit>();
 			MouseObservable = new Subject<MouseParameter>();
 
@@ -60,7 +43,7 @@ namespace BK.Plugins.MouseHook.Logic
 			var pipe = _source.Buffer(doubleClickTime, 4);
 
 			pipe.Where(buffer => buffer.Count > 0)
-				.Select(buffer => (List<LowLevelMouseTuple>)buffer)
+				.Select(buffer => (List<(LowLevelMouseInfo, MouseParameter)>)buffer)
 				.ObserveOn(ObserveOnScheduler)
 				.SubscribeOn(SubscribeOnScheduler)
 				.Subscribe(EvaluateEvents)
@@ -71,9 +54,9 @@ namespace BK.Plugins.MouseHook.Logic
 		public Subject<MouseParameter> MouseObservable { get; private set; }
 
 
-		private void EvaluateEvents(List<LowLevelMouseTuple> buffer)
+		private void EvaluateEvents(List<(LowLevelMouseInfo info, MouseParameter parameter)> buffer)
 		{
-			Debug.WriteLine($"### started! count: {buffer.Count}");
+			Debug.WriteLine($"### started! count: {buffer.Count}"); 
 
 			var rest = buffer.Count % 4;
 			bool hasLeftOver = rest != 0;
@@ -88,27 +71,26 @@ namespace BK.Plugins.MouseHook.Logic
 				var item4 = buffer[index + 3];
 
 				// double click
-				if (IsDoubleClick(item1.Type, item3.Type))
+				if (IsDoubleClick(item1.info.Type, item3.info.Type))
 				{
-					GetParameterAndInvoke(item1, item1.HookStruct.GetMousePoint(), item1.HookStruct.time,true);
+					GetParameterAndInvoke(in item1.info, in item1.parameter, true);
 				}
 				else // single click
 				{
-					GetParameterAndInvoke(item1, item1.HookStruct.GetMousePoint(), item1.HookStruct.time);
-					GetParameterAndInvoke(item2, item2.HookStruct.GetMousePoint(), item2.HookStruct.time);
-					GetParameterAndInvoke(item3, item3.HookStruct.GetMousePoint(), item3.HookStruct.time);
-					GetParameterAndInvoke(item4, item4.HookStruct.GetMousePoint(), item4.HookStruct.time);
+					GetParameterAndInvoke(in item1.info, in item1.parameter, false);
+					GetParameterAndInvoke(in item2.info, in item2.parameter, false);
+					GetParameterAndInvoke(in item3.info, in item3.parameter, false);
+					GetParameterAndInvoke(in item4.info, in item4.parameter, false);
 				}
 			}
 
 			// last item if uneven
 			if (hasLeftOver)
 			{
-				// TODO: Use getrange for performance
 				var leftOver = buffer.Skip(count).Take(rest);
 				foreach (var pair in leftOver)
 				{
-					GetParameterAndInvoke(pair, pair.HookStruct.GetMousePoint(), pair.HookStruct.time);
+					GetParameterAndInvoke(in pair.info, in pair.parameter, false);
 				}
 
 			}
@@ -125,12 +107,14 @@ namespace BK.Plugins.MouseHook.Logic
 			return false;
 		}
 
-		internal override void MouseClickDelegateTemplateMethod(in LowLevelMouseTuple lowLevelMouseTuple) => 
-			_source.OnNext(lowLevelMouseTuple);
+		internal override void MouseClickDelegateOverride(in LowLevelMouseInfo info, in MouseParameter parameter)
+		{
+			_source.OnNext((info, parameter));
+		}
 
 		public override void UnHook()
 		{
-			if(!IsHooked) return;
+			if (!IsHooked) return;
 			IsHooked = false;
 			base.UnHook();
 			_unHookIndicator.OnNext(Unit.Default);
@@ -138,19 +122,20 @@ namespace BK.Plugins.MouseHook.Logic
 			_disposable.Dispose();
 		}
 
-		private void GetParameterAndInvoke(in LowLevelMouseTuple info, in MousePoint point, int time, bool isDoubleCLick = false)
+		private void GetParameterAndInvoke(in LowLevelMouseInfo info, in MouseParameter parameter, bool isDoubleClick)
 		{
-			if (isDoubleCLick)
+			var mouseInfo = parameter.MouseInfo;
+			var time = info.HookStruct.time;
+			var position = parameter.Position;
+
+			if (isDoubleClick)
 			{
-				var mouseInfo = _mouseInfoFactory.Create(info.Type, info.HookStruct);
-				var param = MouseParameter.Factory.Create(mouseInfo, point, time).ToDoubleClick();
+				var param = MouseParameter.Factory.CreateHasDoubleClick(mouseInfo, position, time);
 				InvokeDoubleClickHandler(mouseInfo, param);
 			}
 			else
 			{
-				var mouseInfo = _mouseInfoFactory.Create(info.Type, info.HookStruct);
-				var param = MouseParameter.Factory.Create(mouseInfo, point, time);
-				InvokeHandler(info.Type,this, param);
+				InvokeHandler(info.Type, this, parameter);
 			}
 		}
 
@@ -183,7 +168,7 @@ namespace BK.Plugins.MouseHook.Logic
 		protected override void Invoke(EventHandler<MouseParameter> handler, object sender, MouseParameter param)
 		{
 			base.Invoke(handler, sender, param);
-			if(MouseObservable.HasObservers)
+			if (MouseObservable.HasObservers)
 				MouseObservable.OnNext(param);
 		}
 

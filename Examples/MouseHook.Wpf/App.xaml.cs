@@ -7,6 +7,7 @@ using System.Reactive.Concurrency;
 using System.Threading.Tasks;
 using System.Windows;
 using BK.Plugins.MouseHook.Core;
+using BK.Plugins.MouseHookRx;
 
 namespace MouseHook.Wpf
 {
@@ -21,8 +22,8 @@ namespace MouseHook.Wpf
 
 			MainWindow = new MainWindow();
 			MainWindow.Show();
-			
-			var hook = new BK.Plugins.MouseHook.Logic.MouseHookRx();
+
+			using var hook = new BK.Plugins.MouseHookRx.MouseHookRx();
 			hook.LDownEvent += HookOnLDownEvent;
 
 			hook.SubscribeOnScheduler = new DispatcherScheduler(Dispatcher);
