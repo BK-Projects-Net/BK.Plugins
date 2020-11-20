@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reactive.Subjects;
 using System.Runtime.InteropServices;
 using BK.Plugins.PInvoke;
 using BK.Plugins.MouseHook.Common;
@@ -19,7 +18,7 @@ namespace BK.Plugins.MouseHook.Logic
 
 		public bool IsHooked { get; protected set; }
 		public TimeSpan DoubleClickTime => TimeSpan.FromMilliseconds(_user32.GetDoubleClickTime());
-		public Subject<MouseParameter> MouseObservable { get; protected set; }
+		//public Subject<MouseParameter> MouseObservable { get; protected set; }
 		
 		#region Events
 		public event EventHandler<MouseParameter> MoveEvent;
@@ -140,13 +139,13 @@ namespace BK.Plugins.MouseHook.Logic
 		{
 			handler?.Invoke(sender, param);
 			GlobalEvent?.Invoke(sender, param);
-			if(MouseObservable.HasObservers)
-				MouseObservable.OnNext(param);
+			//if(MouseObservable.HasObservers)
+			//	MouseObservable.OnNext(param);
 		}
 
 		public void Dispose()
 		{
-			MouseObservable?.Dispose();
+			//MouseObservable?.Dispose();
 			UnHook();
 		}
 	}
