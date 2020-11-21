@@ -24,8 +24,10 @@
   <!-- project refs -->
   <ItemGroup>
     <ProjectReference Include="..\BK.Plugins.PInvoke\BK.Plugins.PInvoke.csproj">
-     <PrivateAssets>all</PrivateAssets>
+      <PrivateAssets>all</PrivateAssets>
     </ProjectReference>
-    <ProjectReference Include="..\BK.Plugins.MouseHook\BK.Plugins.MouseHook.csproj"></ProjectReference>
+    <ProjectReference Include="..\BK.Plugins.MouseHook\BK.Plugins.MouseHook.csproj">
+      <PrivateAssets>all</PrivateAssets>
+    </ProjectReference>
   </ItemGroup>
 </Project>
