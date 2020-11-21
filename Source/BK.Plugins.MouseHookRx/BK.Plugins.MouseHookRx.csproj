@@ -15,17 +15,6 @@
     <LangVersion>8</LangVersion>
   </PropertyGroup>
 
-  <!--Build config -->
-  <PropertyGroup>
-    <!-- Embeds package references into the nuget https://dev.to/wabbbit/include-both-nuget-package-references-and-project-reference-dll-using-dotnet-pack-2d8p -->
-    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
-  </PropertyGroup>
-  <Target DependsOnTargets="ResolveReferences" Name="CopyProjectReferencesToPackage">
-    <ItemGroup>
-      <BuildOutputInPackage Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference'))" />
-    </ItemGroup>
-  </Target>
-
   <!-- package refs -->
   <ItemGroup>
     <PackageReference Include="System.Reactive" Version="4.4.1" />
@@ -35,8 +24,7 @@
   <!-- project refs -->
   <ItemGroup>
     <ProjectReference Include="..\BK.Plugins.PInvoke\BK.Plugins.PInvoke.csproj">
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-      <IncludeAssets>BK.Plugins.PInvoke.dll</IncludeAssets>
+     <PrivateAssets>all</PrivateAssets>
     </ProjectReference>
     <ProjectReference Include="..\BK.Plugins.MouseHook\BK.Plugins.MouseHook.csproj"></ProjectReference>
   </ItemGroup>
