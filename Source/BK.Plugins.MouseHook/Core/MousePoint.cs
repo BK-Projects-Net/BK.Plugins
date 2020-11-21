@@ -18,7 +18,8 @@ namespace BK.Plugins.MouseHook.Core
 		public bool Equals(MousePoint other) => X == other.X && Y == other.Y;
 		public override bool Equals(object obj) => obj is MousePoint other && Equals(other);
 
-		public override int GetHashCode() { unchecked { return (X * 397) ^ Y; }
+		public override int GetHashCode() { unchecked { return (X * 397) ^ Y; } }
+
 		public override string ToString() => $"X/Y: {X}/{Y}";
 	}
 }

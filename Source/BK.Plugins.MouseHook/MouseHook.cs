@@ -57,6 +57,13 @@ namespace BK.Plugins.MouseHook
 			_user32.UnhookWindowsHookEx(_mouseHook);
 		}
 
+		public bool TryGetMousePosition(out MousePoint point)
+		{
+			var success = _user32.GetCursorPos(out var p);
+			point = new MousePoint(p.X, p.Y);
+			return success;
+		}
+
 		private IntPtr MouseClickDelegate(int code, IntPtr wparam, IntPtr lparam)
 		{
 			var hookType = (MouseHookType)wparam; 
