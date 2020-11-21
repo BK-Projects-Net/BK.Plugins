@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <!-- nuget and versioning -->
   <PropertyGroup>
     <PackageId>BK.Plugins.MouseHookRx</PackageId>
@@ -26,6 +26,10 @@
     <ProjectReference Include="..\BK.Plugins.PInvoke\BK.Plugins.PInvoke.csproj">
      <PrivateAssets>all</PrivateAssets>
     </ProjectReference>
-    <ProjectReference Include="..\BK.Plugins.MouseHook\BK.Plugins.MouseHook.csproj"></ProjectReference>
+    <ProjectReference Include="..\BK.Plugins.MouseHook\BK.Plugins.MouseHook.csproj">
+      <IncludeAssets>BK.Plugins.MouseHook.dll</IncludeAssets>
+    </ProjectReference>
   </ItemGroup>
+
+  
 </Project>
