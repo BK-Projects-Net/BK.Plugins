@@ -1,7 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Reactive.Concurrency;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows.Threading;
 using BK.Plugins.MouseHook.Core;
 using BK.Plugins.PInvoke;
@@ -9,64 +11,6 @@ using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.MouseHook
 {
-	internal class MouseBuffer
-	{
-		private readonly Queue<MouseParameter> _buffer = new Queue<MouseParameter>();
-
-		internal void Add(in MouseParameter parameter)
-		{
-			_buffer.Enqueue(parameter);
-		}
-
-
-	}
-
-	internal class AccurateTimer
-	{
-		private delegate void TimerEventDel(int id, int msg, IntPtr user, int dw1, int dw2);
-		private const int TIME_PERIODIC = 1;
-		private const int EVENT_TYPE = TIME_PERIODIC;// + 0x100;  // TIME_KILL_SYNCHRONOUS causes a hang ?!
-		[DllImport("winmm.dll")]
-		private static extern int timeBeginPeriod(int msec);
-		[DllImport("winmm.dll")]
-		private static extern int timeEndPeriod(int msec);
-		[DllImport("winmm.dll")]
-		private static extern int timeSetEvent(int delay, int resolution, TimerEventDel handler, IntPtr user, int eventType);
-		[DllImport("winmm.dll")]
-		private static extern int timeKillEvent(int id);
-
-		private readonly Action _action;
-		private readonly int _timerId;
-		private readonly TimerEventDel _handler;  // NOTE: declare at class scope so garbage collector doesn't release it!!!
-		private readonly Dispatcher _dispatcher;
-
-		public AccurateTimer(Action action, int delay, Dispatcher dispatcher) : this(action, delay)
-		{
-			_dispatcher = dispatcher;
-		}
-
-		public AccurateTimer(Action action, int delay)
-		{
-			_action = action;
-			timeBeginPeriod(1);
-			_handler = new TimerEventDel(TimerCallback);
-			_timerId = timeSetEvent(delay, 0, _handler, IntPtr.Zero, EVENT_TYPE);
-		}
-
-		public void Stop()
-		{
-			int err = timeKillEvent(_timerId);
-			timeEndPeriod(1);
-			System.Threading.Thread.Sleep(100);// Ensure callbacks are drained
-		}
-
-		private void TimerCallback(int id, int msg, IntPtr user, int dw1, int dw2)
-		{
-			if (_timerId != 0)
-				_dispatcher.BeginInvoke(_action);
-		}
-	}
-
 	public abstract class MouseHook : IDisposable
 	{
 		private readonly IUser32 _user32 = new User32();
@@ -103,8 +47,7 @@ namespace BK.Plugins.MouseHook
 			_mouseHookProcHandle = GCHandle.Alloc(_mouseHookProc);
 
 			var mouseHook = HookType.WH_MOUSE_LL;
-			_mouseHook = _user32.SetWindowsHookEx((int)mouseHook, _mouseHookProc, IntPtr.Zero, 0);
-
+			Task.Run(() => { _mouseHook = _user32.SetWindowsHookEx((int) mouseHook, _mouseHookProc, IntPtr.Zero, 0); }).GetAwaiter().GetResult();
 			if (_mouseHook == IntPtr.Zero)
 			{
 				var error = Marshal.GetLastWin32Error();
@@ -135,7 +78,7 @@ namespace BK.Plugins.MouseHook
 			return _user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
 		}
 
-		private readonly Queue<MouseParameter> _queue = new Queue<MouseParameter>();
+		private readonly ConcurrentQueue<MouseParameter> _queue = new ConcurrentQueue<MouseParameter>();
 
 		internal void MouseClickDelegateImpl(MouseHookType type, MSLLHOOKSTRUCT mouseHookStruct)
 		{
