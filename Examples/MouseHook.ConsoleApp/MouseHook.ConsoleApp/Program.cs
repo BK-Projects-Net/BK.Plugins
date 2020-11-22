@@ -26,6 +26,7 @@ namespace MouseHook.ConsoleApp
 			var hook = new MouseHookRx();
 			hook.SetHook();
 
+			var time = hook.DoubleClickTime;
 			//HookAllEventHandlers(hook);
 			HookObservable(hook);
 		}

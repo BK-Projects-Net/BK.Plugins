@@ -18,17 +18,7 @@ namespace BK.Plugins.MouseHook.Core
 
 	internal class MouseInfoFactory
 	{
-		internal MouseInfo CreateWheelInfo(MSLLHOOKSTRUCT hookStruct)
-		{
-			var info = MouseInfo.Wheel;
-						
-			if (hookStruct.mouseData > 0)      // up scroll
-				info |= MouseInfo.Up;
-			else if (hookStruct.mouseData < 0) // down scroll
-				info |= MouseInfo.Down;
-
-			return info;
-		}
+		
 
 		internal MouseInfo Create(MouseHookType hookType, MSLLHOOKSTRUCT hookStruct)
 		{
@@ -45,12 +35,7 @@ namespace BK.Plugins.MouseHook.Core
 					return MouseInfo.Move;
 
 				case MouseHookType.WM_MOUSEWHEEL:
-					result = MouseInfo.Wheel;
-					if (hookStruct.mouseData > 0)     
-						result |= MouseInfo.Up;
-					else if (hookStruct.mouseData < 0) 
-						result |= MouseInfo.Down;
-					return result;
+					return CreateWheelInfo(hookStruct);
 
 				case MouseHookType.WM_RBUTTONDOWN:
 					return MouseInfo.RightButton | MouseInfo.Down;
@@ -76,6 +61,18 @@ namespace BK.Plugins.MouseHook.Core
 				default:
 					return MouseInfo.Unknown;
 			}
+		}
+
+		private static MouseInfo CreateWheelInfo(MSLLHOOKSTRUCT hookStruct)
+		{
+			var info = MouseInfo.Wheel;
+
+			if (hookStruct.mouseData > 0)      // up scroll
+				info |= MouseInfo.Up;
+			else if (hookStruct.mouseData < 0) // down scroll
+				info |= MouseInfo.Down;
+
+			return info;
 		}
 
 		private static MouseInfo GetMouse4Or5(in int mouseData, ref MouseInfo result)
