@@ -7,6 +7,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Windows.Threading;
 using BK.Plugins.MouseHook.Core;
 using BK.Plugins.PInvoke.Core;
 
@@ -176,7 +177,7 @@ namespace BK.Plugins.MouseHookRx
 			}
 		}
 
-		protected override void Invoke(EventHandler<MouseParameter> handler, object sender, MouseParameter param)
+		protected override void Invoke(EventHandler<MouseParameter> handler, object sender, MouseParameter param, Dispatcher dispatcher = null)
 		{
 			base.Invoke(handler, sender, param);
 			if (MouseObservable.HasObservers)

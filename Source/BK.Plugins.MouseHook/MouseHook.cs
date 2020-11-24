@@ -7,6 +7,8 @@ using BK.Plugins.MouseHook.Core;
 using BK.Plugins.PInvoke;
 using BK.Plugins.PInvoke.Core;
 
+// https://stackoverflow.com/questions/50055814/how-to-detect-double-click-tap-when-handling-wm-pointer-message/50057917#50057917
+// https://devblogs.microsoft.com/oldnewthing/20041018-00/?p=37543
 
 namespace BK.Plugins.MouseHook
 {
@@ -41,8 +43,8 @@ namespace BK.Plugins.MouseHook
 					var item3 = buffer[2];
 					var item4 = buffer[3];
 
-					if (Enum.Equals(item1.HookStruct, item3.HookStruct) &&
-					    Enum.Equals(item2.HookStruct, item4.HookStruct))
+					if (Enum.Equals(item1.Type, item3.Type) &&
+					    Enum.Equals(item2.Type, item4.Type))
 					{
 						var doubleClickParameter = item1.MouseParameter.ToDoubleClick();
 						InvokeDoubleClickHandler(doubleClickParameter.MouseInfo, doubleClickParameter);
@@ -123,11 +125,8 @@ namespace BK.Plugins.MouseHook
 		{
 			var hookType = (MouseHookType)wparam; 
 			var mouseHookStruct = (MSLLHOOKSTRUCT) Marshal.PtrToStructure(lparam, typeof(MSLLHOOKSTRUCT));
-
-			ThreadPool.QueueUserWorkItem(_ =>
-			{ 
-				MouseClickDelegateImpl(hookType, mouseHookStruct);
-			});
+			
+			MouseClickDelegateImpl(hookType, mouseHookStruct);
 
 			return _user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
 		}
@@ -140,8 +139,18 @@ namespace BK.Plugins.MouseHook
 			var parameter = MouseParameter.Factory.Create(info, point, time);
 			var mouseTuple = new LowLevelMouseInfo(type, mouseHookStruct, parameter);
 
-			_buffer.Enqueue(in mouseTuple);
-
+			if (type == MouseHookType.WM_MOUSEMOVE)
+			{
+				Invoke(MoveEvent, this, parameter);
+				return;
+			}
+			if (type == MouseHookType.WM_MOUSEWHEEL)
+			{
+				Invoke(WheelEvent, this, parameter);
+				return;
+			}
+			
+			ThreadPool.QueueUserWorkItem(_ => _buffer.Enqueue(in mouseTuple));
 			// MouseClickDelegateOverride(mouseTuple, parameter);
 		}
 
@@ -227,13 +236,13 @@ namespace BK.Plugins.MouseHook
 		protected void InvokeUnhandled(object sender, MouseParameter parameter)
 		{
 			if (_dispatcher != null)
-				_dispatcher.BeginInvoke(new Action(() => Invoke(UnhandledEvent, sender, parameter)));
+				_dispatcher.BeginInvoke(new Action(() => Invoke(UnhandledEvent, sender, parameter, _dispatcher)));
 			else Invoke(UnhandledEvent, sender, parameter);
 		}
 
-		protected virtual void Invoke(EventHandler<MouseParameter> handler, object sender, MouseParameter param)
+		protected virtual void Invoke(EventHandler<MouseParameter> handler, object sender, MouseParameter param, Dispatcher dispatcher = null)
 		{
-			if (_dispatcher != null)
+			if (dispatcher != null)
 				_dispatcher.BeginInvoke(new Action(() =>
 				{
 					handler?.Invoke(sender, param);
