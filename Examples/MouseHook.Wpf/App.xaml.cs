@@ -23,14 +23,18 @@ namespace MouseHook.Wpf
 			MainWindow = new MainWindow();
 			MainWindow.Show();
 
-			using var hook = new BK.Plugins.MouseHookRx.MouseHookRx();
-			hook.LDownEvent += HookOnLDownEvent;
+			//UsingRxHook();
+			
+		
+		}
 
+		private void UsingRxHook()
+		{
+			var hook = new BK.Plugins.MouseHookRx.MouseHookRx();
+			hook.LDownEvent += HookOnLDownEvent;
 			hook.SubscribeOnScheduler = new DispatcherScheduler(Dispatcher);
 			hook.ObserveOnScheduler = new DispatcherScheduler(Dispatcher);
-
 			hook.SetHook();
-
 		}
 
 		private void HookOnLDownEvent(object sender, MouseParameter e)

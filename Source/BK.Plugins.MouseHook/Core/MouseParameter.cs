@@ -17,6 +17,8 @@ namespace BK.Plugins.MouseHook.Core
 			Guid = guid;
 		}
 
+		internal MouseParameter ToDoubleClick() => new MouseParameter(MouseInfo | MouseInfo.Double, Position, DateTime, Guid);
+
 		public override string ToString() => 
 			$"Guid: {Guid:D}, Time: {DateTime:G}, Action: {MouseInfo:G}, {Position.ToString()}";
 

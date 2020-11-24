@@ -1,20 +1,20 @@
 ﻿using System;
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Reactive.Concurrency;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Threading;
 using BK.Plugins.MouseHook.Core;
 using BK.Plugins.PInvoke;
 using BK.Plugins.PInvoke.Core;
 
+
 namespace BK.Plugins.MouseHook
 {
-	public abstract class MouseHook : IDisposable
+	public class MouseHook : IDisposable
 	{
 		private readonly IUser32 _user32 = new User32();
 		private readonly MouseInfoFactory _mouseInfoFactory = new MouseInfoFactory();
+		private readonly Buffer<LowLevelMouseInfo> _buffer;
 
 		private User32.HookProc _mouseHookProc;
 		private GCHandle _mouseHookProcHandle;	// used to pin an instance to not get GC // has to be released
@@ -22,6 +22,48 @@ namespace BK.Plugins.MouseHook
 
 		public bool IsHooked { get; protected set; }
 		public TimeSpan DoubleClickTime => TimeSpan.FromMilliseconds(_user32.GetDoubleClickTime());
+
+		private readonly Dispatcher _dispatcher;
+		public MouseHook(Dispatcher dispatcher) : this()
+		{
+			_dispatcher = dispatcher;
+		}
+
+		public MouseHook()
+		{
+			_buffer = new Buffer<LowLevelMouseInfo>(4, DoubleClickTime.Milliseconds);
+			_buffer.ThresholdReached += buffer =>
+			{
+				if (buffer.Length == 4)
+				{
+					var item1 = buffer[0];
+					var item2 = buffer[1];
+					var item3 = buffer[2];
+					var item4 = buffer[3];
+
+					if (Enum.Equals(item1.HookStruct, item3.HookStruct) &&
+					    Enum.Equals(item2.HookStruct, item4.HookStruct))
+					{
+						var doubleClickParameter = item1.MouseParameter.ToDoubleClick();
+						InvokeDoubleClickHandler(doubleClickParameter.MouseInfo, doubleClickParameter);
+					}
+					else
+					{
+						InvokeSingleClicks(buffer);
+					}
+				}
+				else
+				{
+					InvokeSingleClicks(buffer);
+				}
+
+				void InvokeSingleClicks(LowLevelMouseInfo[] lowLevelMouseInfos)
+				{
+					foreach (var item in lowLevelMouseInfos) 
+						InvokeHandler(item.Type, this, item.MouseParameter);
+				}
+			};
+		}
 
 		#region Events
 		public event EventHandler<MouseParameter> MoveEvent;
@@ -37,6 +79,12 @@ namespace BK.Plugins.MouseHook
 		public event EventHandler<MouseParameter> Mouse5UpEvent;
 		public event EventHandler<MouseParameter> Mouse5DownEvent;
 
+		public event EventHandler<MouseParameter> LDoubleEvent;
+		public event EventHandler<MouseParameter> MDoubleEvent;
+		public event EventHandler<MouseParameter> RDoubleEvent;
+		public event EventHandler<MouseParameter> Mouse4DoubleEvent;
+		public event EventHandler<MouseParameter> Mouse5DoubleEvent;
+
 		public event EventHandler<MouseParameter> GlobalEvent;
 		public event EventHandler<MouseParameter> UnhandledEvent;
 		#endregion
@@ -47,7 +95,7 @@ namespace BK.Plugins.MouseHook
 			_mouseHookProcHandle = GCHandle.Alloc(_mouseHookProc);
 
 			var mouseHook = HookType.WH_MOUSE_LL;
-			Task.Run(() => { _mouseHook = _user32.SetWindowsHookEx((int) mouseHook, _mouseHookProc, IntPtr.Zero, 0); }).GetAwaiter().GetResult();
+			_mouseHook = _user32.SetWindowsHookEx((int) mouseHook, _mouseHookProc, IntPtr.Zero, 0);
 			if (_mouseHook == IntPtr.Zero)
 			{
 				var error = Marshal.GetLastWin32Error();
@@ -68,30 +116,33 @@ namespace BK.Plugins.MouseHook
 			return success;
 		}
 
+		private readonly BackgroundWorker _worker = new BackgroundWorker();
+
+		// this delgate has to be quickly returned and all events have to be invoked on the dispatcher when one exists
 		private IntPtr MouseClickDelegate(int code, IntPtr wparam, IntPtr lparam)
 		{
 			var hookType = (MouseHookType)wparam; 
 			var mouseHookStruct = (MSLLHOOKSTRUCT) Marshal.PtrToStructure(lparam, typeof(MSLLHOOKSTRUCT));
 
-			MouseClickDelegateImpl(hookType, mouseHookStruct);
+			ThreadPool.QueueUserWorkItem(_ =>
+			{ 
+				MouseClickDelegateImpl(hookType, mouseHookStruct);
+			});
 
 			return _user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
 		}
 
-		private readonly ConcurrentQueue<MouseParameter> _queue = new ConcurrentQueue<MouseParameter>();
-
 		internal void MouseClickDelegateImpl(MouseHookType type, MSLLHOOKSTRUCT mouseHookStruct)
 		{
-			var mouseTuple = new LowLevelMouseInfo(type, mouseHookStruct);
 			var time = mouseHookStruct.time;
 			var point = new MousePoint(mouseHookStruct.pt.X, mouseHookStruct.pt.Y);
 			var info = _mouseInfoFactory.Create(type, mouseHookStruct);
 			var parameter = MouseParameter.Factory.Create(info, point, time);
+			var mouseTuple = new LowLevelMouseInfo(type, mouseHookStruct, parameter);
 
-			_queue.Enqueue(parameter);
-			
+			_buffer.Enqueue(in mouseTuple);
 
-			//MouseClickDelegateOverride(mouseTuple, parameter);
+			// MouseClickDelegateOverride(mouseTuple, parameter);
 		}
 
 		/// <summary>
@@ -148,14 +199,52 @@ namespace BK.Plugins.MouseHook
 					break;
 			}
 		}
+		internal void InvokeDoubleClickHandler(MouseInfo info, in MouseParameter parameter)
+		{
+			switch (info)
+			{
+				case MouseInfo.LeftButton:
+					Invoke(LDoubleEvent, this, parameter);
+					break;
+				case MouseInfo.MiddleButton:
+					Invoke(MDoubleEvent, this, parameter);
+					break;
+				case MouseInfo.RightButton:
+					Invoke(RDoubleEvent, this, parameter);
+					break;
+				case MouseInfo.Mouse4:
+					Invoke(Mouse4DoubleEvent, this, parameter);
+					break;
+				case MouseInfo.Mouse5:
+					Invoke(Mouse5DoubleEvent, this, parameter);
+					break;
+				default:
+					InvokeUnhandled(this, parameter);
+					break;
+			}
+		}
 
-		protected void InvokeUnhandled(object sender, MouseParameter parameter) => 
-			Invoke(UnhandledEvent, sender, parameter);
+		protected void InvokeUnhandled(object sender, MouseParameter parameter)
+		{
+			if (_dispatcher != null)
+				_dispatcher.BeginInvoke(new Action(() => Invoke(UnhandledEvent, sender, parameter)));
+			else Invoke(UnhandledEvent, sender, parameter);
+		}
 
 		protected virtual void Invoke(EventHandler<MouseParameter> handler, object sender, MouseParameter param)
 		{
-			handler?.Invoke(sender, param);
-			GlobalEvent?.Invoke(sender, param);
+			if (_dispatcher != null)
+				_dispatcher.BeginInvoke(new Action(() =>
+				{
+					handler?.Invoke(sender, param);
+					GlobalEvent?.Invoke(sender, param);
+				}));
+			else
+			{
+				handler?.Invoke(sender, param);
+				GlobalEvent?.Invoke(sender, param);
+			}
+			
 		}
 
 		public virtual void Dispose()

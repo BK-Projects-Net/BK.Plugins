@@ -6,11 +6,13 @@ namespace BK.Plugins.MouseHook.Core
 	{
 		public readonly MouseHookType Type;
 		public readonly MSLLHOOKSTRUCT HookStruct;
+		public readonly MouseParameter MouseParameter;
 
-		public LowLevelMouseInfo(MouseHookType type, MSLLHOOKSTRUCT hookStruct)
+		public LowLevelMouseInfo(MouseHookType type, MSLLHOOKSTRUCT hookStruct, MouseParameter mouseParameter)
 		{
 			Type = type;
 			HookStruct = hookStruct;
+			MouseParameter = mouseParameter;
 		}
 	}
 

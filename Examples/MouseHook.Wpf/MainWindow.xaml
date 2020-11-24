@@ -6,7 +6,10 @@
         xmlns:local="clr-namespace:MouseHook.Wpf"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        
-    </Grid>
+    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+        <StackPanel Orientation="Horizontal">
+            <Label Content="Last event was: " />
+            <Label Content="{Binding LastEvent}" />
+        </StackPanel>
+    </StackPanel>
 </Window>
