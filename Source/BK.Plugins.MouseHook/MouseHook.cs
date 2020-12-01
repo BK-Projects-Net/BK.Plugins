@@ -38,14 +38,6 @@ namespace BK.Plugins.MouseHook
 
 		public bool IsHooked { get; protected set; }
 
-		private readonly Dispatcher _dispatcher;
-		public MouseHook(Dispatcher dispatcher) : this()
-		{
-			_dispatcher = dispatcher;
-
-			
-		}
-
 		private void ElapsedSingleClickThreshold(object sender, ElapsedEventArgs args, in LowLevelMouseInfo capturedMouseClick) => 
 			InvokeHandler(capturedMouseClick.Type, sender, capturedMouseClick.MouseParameter);
 
@@ -273,27 +265,12 @@ namespace BK.Plugins.MouseHook
 				InvokeUnhandled(this, parameter);
 		}
 
-		protected void InvokeUnhandled(object sender, MouseParameter parameter)
-		{
-			if (_dispatcher != null)
-				_dispatcher.BeginInvoke(new Action(() => Invoke(UnhandledEvent, sender, parameter, _dispatcher)));
-			else Invoke(UnhandledEvent, sender, parameter);
-		}
+		protected void InvokeUnhandled(object sender, MouseParameter parameter) => Invoke(UnhandledEvent, sender, parameter);
 
 		protected virtual void Invoke(EventHandler<MouseParameter> handler, object sender, MouseParameter param, Dispatcher dispatcher = null)
 		{
-			if (dispatcher != null)
-				_dispatcher.BeginInvoke(new Action(() =>
-				{
-					handler?.Invoke(sender, param);
-					GlobalEvent?.Invoke(sender, param);
-				}));
-			else
-			{
-				handler?.Invoke(sender, param);
-				GlobalEvent?.Invoke(sender, param);
-			}
-			
+			handler?.Invoke(sender, param);
+			GlobalEvent?.Invoke(sender, param);
 		}
 
 		public virtual void Dispose()
