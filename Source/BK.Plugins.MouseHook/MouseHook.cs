@@ -19,13 +19,11 @@ namespace BK.Plugins.MouseHook
 	{
 		private readonly IUser32 _user32 = new User32();
 		private readonly MouseInfoFactory _mouseInfoFactory = new MouseInfoFactory();
-		private readonly Buffer<LowLevelMouseInfo> _buffer;
 
 		private User32.HookProc _mouseHookProc;
 		private GCHandle _mouseHookProcHandle;	// used to pin an instance to not get GC // has to be released
 		private IntPtr _mouseHook = IntPtr.Zero;
-		private readonly System.Timers.Timer _timer;
-		private CancellationToken _token = new CancellationToken();
+		private System.Timers.Timer _timer;
 		private LowLevelMouseInfo _capturedMouseClick;
 
 		private int? _doubleClickTicks;
@@ -43,44 +41,20 @@ namespace BK.Plugins.MouseHook
 
 		public MouseHook()
 		{
-			_timer = new System.Timers.Timer { AutoReset = false, Interval = DoubleClickTicks };
-			_timer.Elapsed += (sender, args) => ElapsedSingleClickThreshold(sender, args, in _capturedMouseClick);
-
-			//_buffer = new Buffer<LowLevelMouseInfo>(4, DoubleClickTime.Milliseconds);
-			//_buffer.ThresholdReached += buffer =>
-			//{
-			//	if (buffer.Length == 4)
-			//	{
-			//		var item1 = buffer[0];
-			//		var item2 = buffer[1];
-			//		var item3 = buffer[2];
-			//		var item4 = buffer[3];
-
-			//		if (Enum.Equals(item1.Type, item3.Type) &&
-			//		    Enum.Equals(item2.Type, item4.Type))
-			//		{
-			//			var doubleClickParameter = item1.MouseParameter.ToDoubleClick();
-			//			InvokeDoubleClickHandler(doubleClickParameter.MouseInfo, doubleClickParameter);
-			//		}
-			//		else
-			//		{
-			//			InvokeSingleClicks(buffer);
-			//		}
-			//	}
-			//	else
-			//	{
-			//		InvokeSingleClicks(buffer);
-			//	}
-
-			//	void InvokeSingleClicks(LowLevelMouseInfo[] lowLevelMouseInfos)
-			//	{
-			//		foreach (var item in lowLevelMouseInfos) 
-			//			InvokeHandler(item.Type, this, item.MouseParameter);
-			//	}
-			//};
+			Init(DoubleClickTicks);
 		}
 
-		
+		internal MouseHook(int doubleClickTicks, IUser32 user32)
+		{
+			Init(doubleClickTicks);
+			_user32 = user32;
+		}
+
+		private void Init(int doubleClickTicks)
+		{
+			_timer = new System.Timers.Timer { AutoReset = false, Interval = doubleClickTicks };
+			_timer.Elapsed += (sender, args) => ElapsedSingleClickThreshold(sender, args, in _capturedMouseClick);
+		}
 
 		#region Events
 		public event EventHandler<MouseParameter> MoveEvent;
@@ -151,7 +125,6 @@ namespace BK.Plugins.MouseHook
 			var point = new MousePoint(mouseHookStruct.pt.X, mouseHookStruct.pt.Y);
 			var info = _mouseInfoFactory.Create(type, mouseHookStruct);
 			var parameter = MouseParameter.Factory.Create(info, point, time);
-			
 
 			_user32.GetSystemMetrics(SystemMetric.SM_CXDOUBLECLK);
 
