@@ -23,19 +23,19 @@ namespace MouseHook.ConsoleApp
 	{
 		public AppContext()
 		{
-			var hook = new MouseHookRx();
+			var hook = new BK.Plugins.MouseHook.MouseHook();
 			hook.SetHook();
 
-			var time = hook.DoubleClickTime;
-			//HookAllEventHandlers(hook);
-			HookObservable(hook);
+			var time = hook.DoubleClickTicks;
+			HookAllEventHandlers(hook);
+			// HookObservable(hook);
 		}
 
 		private void HookObservable(MouseHookRx hookRx) => 
 			hookRx.MouseObservable
 				.Subscribe(param => Console.WriteLine(param));
 
-		private void HookAllEventHandlers(MouseHookRx hookRx)
+		private void HookAllEventHandlers(BK.Plugins.MouseHook.MouseHook hookRx)
 		{
 			hookRx.LDownEvent += OnInvoke;
 			hookRx.LUpEvent += OnInvoke;
@@ -52,8 +52,8 @@ namespace MouseHook.ConsoleApp
 			hookRx.MoveEvent += OnInvoke;
 			hookRx.WheelEvent += OnInvoke;
 
-			hookRx.UnhandledEvent += OnInvoke;
-			hookRx.GlobalEvent += OnInvoke;
+			hookRx.UnhandledEvent += (sender, parameter) => throw new InvalidOperationException();
+			// hookRx.GlobalEvent += OnInvoke;
 		}
 
 		private void OnInvoke(object sender, MouseParameter e) => Console.WriteLine(e);

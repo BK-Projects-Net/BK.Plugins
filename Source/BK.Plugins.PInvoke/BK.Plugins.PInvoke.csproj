@@ -47,6 +47,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\SystemMetric.cs" />
     <Compile Include="Core\HookType.cs" />
     <Compile Include="Core\MouseHookType.cs" />
     <Compile Include="Core\MSLLHOOKSTRUCT.cs" />

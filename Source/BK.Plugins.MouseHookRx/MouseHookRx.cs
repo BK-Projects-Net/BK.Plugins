@@ -50,8 +50,8 @@ namespace BK.Plugins.MouseHookRx
 
 			base.SetHook();
 
-			var tolerance = DoubleClickTime.Ticks / 100 * 100 * 2;
-			var doubleClickTime = TimeSpan.FromTicks(DoubleClickTime.Ticks + tolerance);
+			var tolerance = DoubleClickTicks / 100 * 100 * 2;
+			var doubleClickTime = TimeSpan.FromTicks(DoubleClickTicks + tolerance);
 
 			var pipe = _source.Buffer(doubleClickTime, 4);
 
