@@ -49,6 +49,7 @@ namespace BK.Plugins.MouseHook.Tests
 				.Returns(_doubleClickDiameter);
 
 			var hook = new MouseHook(userMock.Object);
+			return hook;
 		}
 
 	}
