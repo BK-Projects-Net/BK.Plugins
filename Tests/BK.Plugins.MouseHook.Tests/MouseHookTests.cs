@@ -27,12 +27,16 @@ namespace BK.Plugins.MouseHook.Tests
 		{
 			// arrange
 			var hook = Setup();
+			var eventQueue = new Queue<MouseParameter>();
+			hook.GlobalEvent += (sender, parameter) => eventQueue.Enqueue(parameter);
+
+			MSLLHOOKSTRUCT hookStructFactory() => new MSLLHOOKSTRUCT() {time = (int) DateTime.Now.Ticks};
 
 			// act
-			hook.MouseClickDelegateImpl(MouseHookType.WM_LBUTTONDOWN, new MSLLHOOKSTRUCT());
-			hook.MouseClickDelegateImpl(MouseHookType.WM_LBUTTONUP, new MSLLHOOKSTRUCT());
-			hook.MouseClickDelegateImpl(MouseHookType.WM_LBUTTONDOWN, new MSLLHOOKSTRUCT());
-			hook.MouseClickDelegateImpl(MouseHookType.WM_LBUTTONDOWN, new MSLLHOOKSTRUCT());
+			hook.MouseClickDelegateImpl(MouseHookType.WM_LBUTTONDOWN, hookStructFactory());
+			hook.MouseClickDelegateImpl(MouseHookType.WM_LBUTTONUP, hookStructFactory());
+			hook.MouseClickDelegateImpl(MouseHookType.WM_LBUTTONDOWN, hookStructFactory());
+			hook.MouseClickDelegateImpl(MouseHookType.WM_LBUTTONUP, hookStructFactory());
 
 			// assert
 		
