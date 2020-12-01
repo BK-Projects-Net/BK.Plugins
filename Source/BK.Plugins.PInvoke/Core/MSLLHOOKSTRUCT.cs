@@ -13,7 +13,7 @@ namespace BK.Plugins.PInvoke.Core
 	public struct MSLLHOOKSTRUCT
 	{
 		public Point pt;
-		public int mouseData;
+		public int mouseData; // used do detect up/down mouse wheel scroll // also used to distinct between mouse4 and mouse5
 		public int flags;
 		public int time;
 		public UIntPtr dwExtraInfo;

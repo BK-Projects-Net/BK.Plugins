@@ -30,7 +30,7 @@ namespace MouseHook.Wpf
 			InitializeComponent();
 			DataContext = this;
 
-			var hook = new BK.Plugins.MouseHook.MouseHook(Dispatcher);
+			var hook = new BK.Plugins.MouseHook.MouseHook();
 			hook.GlobalEvent += HookOnGlobalEvent;
 			hook.SetHook();
 		}

@@ -41,18 +41,21 @@ namespace BK.Plugins.MouseHook
 
 		public MouseHook()
 		{
-			Init(DoubleClickTicks);
+			Init();
 		}
 
-		internal MouseHook(int doubleClickTicks, IUser32 user32)
+		/// <summary>
+		/// Used for testing
+		/// </summary>
+		internal MouseHook(IUser32 user32)
 		{
-			Init(doubleClickTicks);
 			_user32 = user32;
+			Init();
 		}
 
-		private void Init(int doubleClickTicks)
+		private void Init()
 		{
-			_timer = new System.Timers.Timer { AutoReset = false, Interval = doubleClickTicks };
+			_timer = new System.Timers.Timer { AutoReset = false, Interval = DoubleClickTicks };
 			_timer.Elapsed += (sender, args) => ElapsedSingleClickThreshold(sender, args, in _capturedMouseClick);
 		}
 
@@ -125,8 +128,6 @@ namespace BK.Plugins.MouseHook
 			var point = new MousePoint(mouseHookStruct.pt.X, mouseHookStruct.pt.Y);
 			var info = _mouseInfoFactory.Create(type, mouseHookStruct);
 			var parameter = MouseParameter.Factory.Create(info, point, time);
-
-			_user32.GetSystemMetrics(SystemMetric.SM_CXDOUBLECLK);
 
 			if (type == MouseHookType.WM_MOUSEMOVE)
 			{
