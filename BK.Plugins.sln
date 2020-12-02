@@ -28,8 +28,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MouseHook.Wpf", "Examples\M
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BK.Plugins.MouseHookRx", "Source\BK.Plugins.MouseHookRx\BK.Plugins.MouseHookRx.csproj", "{E21C9F3A-CB95-43EA-99AE-80D77685E1BD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BK.Plugins.MouseHook.Tests2", "Tests\BK.Plugins.MouseHook.Tests2\BK.Plugins.MouseHook.Tests2.csproj", "{8A883FD6-5574-40DE-8380-13D73CAAF06B}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -68,10 +66,6 @@ Global
 		{E21C9F3A-CB95-43EA-99AE-80D77685E1BD}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E21C9F3A-CB95-43EA-99AE-80D77685E1BD}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E21C9F3A-CB95-43EA-99AE-80D77685E1BD}.Release|Any CPU.Build.0 = Release|Any CPU
-		{8A883FD6-5574-40DE-8380-13D73CAAF06B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8A883FD6-5574-40DE-8380-13D73CAAF06B}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8A883FD6-5574-40DE-8380-13D73CAAF06B}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8A883FD6-5574-40DE-8380-13D73CAAF06B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -85,7 +79,6 @@ Global
 		{7A37C1D4-067A-4F5C-819B-57CCB29F33DF} = {7B1320D4-45B6-49AE-BF45-AB22ACE18336}
 		{40E5D991-6B47-4E14-9486-F08926A5E6A9} = {7F321CD4-22F2-4A21-A159-4C598EAB5BCE}
 		{E21C9F3A-CB95-43EA-99AE-80D77685E1BD} = {E5419FBC-5386-4315-A38B-E0F8A651D61C}
-		{8A883FD6-5574-40DE-8380-13D73CAAF06B} = {7B1320D4-45B6-49AE-BF45-AB22ACE18336}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {590ADB65-5B13-446C-88AA-08198831BF30}
