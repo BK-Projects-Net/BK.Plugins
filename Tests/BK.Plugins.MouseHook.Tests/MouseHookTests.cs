@@ -1,17 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using BK.Plugins.PInvoke.Core;
 using NUnit.Framework;
-using System.Reactive;
-using System.Reactive.Concurrency;
 using BK.Plugins.MouseHook.Core;
 using BK.Plugins.PInvoke;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using Shouldly;
 
 namespace BK.Plugins.MouseHook.Tests
 {
