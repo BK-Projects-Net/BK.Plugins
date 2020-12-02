@@ -20,7 +20,7 @@ namespace BK.Plugins.MouseHook.Tests
 		public void MouseClickDelegateImpl_LeftDoubleClick()
 		{
 			// Arrange
-			var hook = Setup().hook;
+			using var hook = Setup().hook;
 			var eventQueue = new Queue<MouseParameter>();
 			hook.GlobalEvent += (sender, parameter) => eventQueue.Enqueue(parameter);
 			MSLLHOOKSTRUCT HookStruct() => new MSLLHOOKSTRUCT {time = (int) DateTime.Now.Ticks};
@@ -32,12 +32,31 @@ namespace BK.Plugins.MouseHook.Tests
 			hook.MouseClickDelegateImpl(MouseHookType.WM_LBUTTONUP, HookStruct());
 
 			// Assert
-			eventQueue.Count.ShouldBe(1);
+			eventQueue.Count.ShouldBe(1, string.Join(Environment.NewLine, eventQueue));
 			var mouseParameter = eventQueue.Dequeue();
 			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.LeftButton | MouseInfo.Down);
-
 		}
 
+		[Test]
+		public void MouseClickDelegateImpl_MiddleDoubleClick()
+		{
+			// Arrange
+			using var hook = Setup().hook;
+			var eventQueue = new Queue<MouseParameter>();
+			hook.GlobalEvent += (sender, parameter) => eventQueue.Enqueue(parameter);
+			MSLLHOOKSTRUCT HookStruct() => new MSLLHOOKSTRUCT { time = (int)DateTime.Now.Ticks };
+
+			// Act
+			hook.MouseClickDelegateImpl(MouseHookType.WM_MBUTTONDOWN, HookStruct());
+			hook.MouseClickDelegateImpl(MouseHookType.WM_MBUTTONUP, HookStruct());
+			hook.MouseClickDelegateImpl(MouseHookType.WM_MBUTTONDOWN, HookStruct());
+			hook.MouseClickDelegateImpl(MouseHookType.WM_MBUTTONUP, HookStruct());
+
+			// Assert
+			eventQueue.Count.ShouldBe(1, string.Join(Environment.NewLine, eventQueue));
+			var mouseParameter = eventQueue.Dequeue();
+			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.MiddleButton | MouseInfo.Down);
+		}
 
 		private (MouseHook hook, IMock<IUser32> userMock) Setup()
 		{
