@@ -151,7 +151,7 @@ namespace BK.Plugins.MouseHook
 				}
 				else // single click
 				{
-					_capturedMouseClick = new LowLevelMouseInfo(type, mouseHookStruct, parameter); ;
+					_capturedMouseClick = new LowLevelMouseInfo(type, mouseHookStruct, parameter);
 					_timer.Start();
 
 				}
