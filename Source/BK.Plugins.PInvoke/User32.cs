@@ -5,7 +5,7 @@ using BK.Plugins.PInvoke.Core;
 
 namespace BK.Plugins.PInvoke
 {
-	internal interface IUser32
+	public interface IUser32
 	{
 		bool UnhookWindowsHookEx(IntPtr hhk);
 		IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
@@ -23,7 +23,7 @@ namespace BK.Plugins.PInvoke
 	}
 
 	[DebuggerStepThrough]
-	internal class User32 : IUser32
+	public class User32 : IUser32
 	{
 		public bool UnhookWindowsHookEx(IntPtr hhk) => DllImports.UnhookWindowsHookEx(hhk);
 
@@ -45,7 +45,7 @@ namespace BK.Plugins.PInvoke
 		/// <summary>
 		/// When using this delegate make sure you pin it using GCHandle or use as static field to avoid an Exception!
 		/// </summary>
-		internal delegate IntPtr HookProc(int code, IntPtr wParam, IntPtr lParam);
+		public delegate IntPtr HookProc(int code, IntPtr wParam, IntPtr lParam);
 
 		#endregion
 
