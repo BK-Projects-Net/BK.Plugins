@@ -58,6 +58,27 @@ namespace BK.Plugins.MouseHook.Tests
 			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.MiddleButton | MouseInfo.Down);
 		}
 
+		[Test]
+		public void MouseClickDelegateImpl_RightDoubleClick()
+		{
+			// Arrange
+			using var hook = Setup().hook;
+			var eventQueue = new Queue<MouseParameter>();
+			hook.GlobalEvent += (sender, parameter) => eventQueue.Enqueue(parameter);
+			MSLLHOOKSTRUCT HookStruct() => new MSLLHOOKSTRUCT { time = (int)DateTime.Now.Ticks };
+
+			// Act
+			hook.MouseClickDelegateImpl(MouseHookType.WM_RBUTTONDOWN, HookStruct());
+			hook.MouseClickDelegateImpl(MouseHookType.WM_RBUTTONUP, HookStruct());
+			hook.MouseClickDelegateImpl(MouseHookType.WM_RBUTTONDOWN, HookStruct());
+			hook.MouseClickDelegateImpl(MouseHookType.WM_RBUTTONUP, HookStruct());
+
+			// Assert
+			eventQueue.Count.ShouldBe(1, string.Join(Environment.NewLine, eventQueue));
+			var mouseParameter = eventQueue.Dequeue();
+			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.MiddleButton | MouseInfo.Down);
+		}
+
 		private (MouseHook hook, IMock<IUser32> userMock) Setup()
 		{
 			var userMock = new Mock<IUser32>();
