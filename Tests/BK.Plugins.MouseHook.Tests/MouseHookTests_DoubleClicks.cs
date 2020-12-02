@@ -5,6 +5,8 @@ using NUnit.Framework;
 using BK.Plugins.MouseHook.Core;
 using BK.Plugins.PInvoke;
 using Moq;
+using Shouldly;
+using Shouldly.ShouldlyExtensionMethods;
 
 namespace BK.Plugins.MouseHook.Tests
 {
@@ -30,6 +32,10 @@ namespace BK.Plugins.MouseHook.Tests
 			hook.MouseClickDelegateImpl(MouseHookType.WM_LBUTTONUP, HookStruct());
 
 			// Assert
+			eventQueue.Count.ShouldBe(1);
+			var mouseParameter = eventQueue.Dequeue();
+			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.LeftButton | MouseInfo.Down);
+
 		}
 
 
