@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using BK.Plugins.PInvoke.Core;
 using NUnit.Framework;
 using BK.Plugins.MouseHook.Core;
@@ -11,13 +12,13 @@ using Shouldly.ShouldlyExtensionMethods;
 namespace BK.Plugins.MouseHook.Tests
 {
 	[TestFixture]
-	public class MouseHookTests_DoubleClicks
+	public class MouseHookTests_DoubleClicks : TestBase
 	{
-		private readonly uint _doubleClickTicks = (uint)TimeSpan.FromMilliseconds(500).Ticks;
-		private readonly int _doubleClickDiameter = 50;
+		protected override uint DoubleClickTicks => (uint)TimeSpan.FromMilliseconds(500).Milliseconds;
+		protected override int DoubleClickDiameter => 50;
 
 		[Test]
-		public void MouseClickDelegateImpl_LeftDoubleClick()
+		public async Task MouseClickDelegateImpl_LeftDoubleClick()
 		{
 			// Arrange
 			using var hook = Setup().hook;
@@ -31,6 +32,8 @@ namespace BK.Plugins.MouseHook.Tests
 			hook.MouseClickDelegateImpl(MouseHookType.WM_LBUTTONDOWN, HookStruct());
 			hook.MouseClickDelegateImpl(MouseHookType.WM_LBUTTONUP, HookStruct());
 
+			await Task.Delay(DelayBetweenClicks);
+
 			// Assert
 			eventQueue.Count.ShouldBe(1, string.Join(Environment.NewLine, eventQueue));
 			var mouseParameter = eventQueue.Dequeue();
@@ -38,7 +41,7 @@ namespace BK.Plugins.MouseHook.Tests
 		}
 
 		[Test]
-		public void MouseClickDelegateImpl_MiddleDoubleClick()
+		public async Task MouseClickDelegateImpl_MiddleDoubleClick()
 		{
 			// Arrange
 			using var hook = Setup().hook;
@@ -52,6 +55,8 @@ namespace BK.Plugins.MouseHook.Tests
 			hook.MouseClickDelegateImpl(MouseHookType.WM_MBUTTONDOWN, HookStruct());
 			hook.MouseClickDelegateImpl(MouseHookType.WM_MBUTTONUP, HookStruct());
 
+			await Task.Delay(DelayBetweenClicks);
+
 			// Assert
 			eventQueue.Count.ShouldBe(1, string.Join(Environment.NewLine, eventQueue));
 			var mouseParameter = eventQueue.Dequeue();
@@ -59,7 +64,7 @@ namespace BK.Plugins.MouseHook.Tests
 		}
 
 		[Test]
-		public void MouseClickDelegateImpl_RightDoubleClick()
+		public async Task MouseClickDelegateImpl_RightDoubleClick()
 		{
 			// Arrange
 			using var hook = Setup().hook;
@@ -73,14 +78,16 @@ namespace BK.Plugins.MouseHook.Tests
 			hook.MouseClickDelegateImpl(MouseHookType.WM_RBUTTONDOWN, HookStruct());
 			hook.MouseClickDelegateImpl(MouseHookType.WM_RBUTTONUP, HookStruct());
 
+			await Task.Delay(DelayBetweenClicks);
+
 			// Assert
 			eventQueue.Count.ShouldBe(1, string.Join(Environment.NewLine, eventQueue));
 			var mouseParameter = eventQueue.Dequeue();
-			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.MiddleButton | MouseInfo.Down);
+			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.RightButton | MouseInfo.Down);
 		}
 
 		[Test]
-		public void MouseClickDelegateImpl_Mouse4DoubleClick()
+		public async Task MouseClickDelegateImpl_Mouse4DoubleClick()
 		{
 			// Arrange
 			using var hook = Setup().hook;
@@ -94,6 +101,8 @@ namespace BK.Plugins.MouseHook.Tests
 			hook.MouseClickDelegateImpl(MouseHookType.WM_XBUTTONDOWN, HookStruct());
 			hook.MouseClickDelegateImpl(MouseHookType.WM_XBUTTONUP, HookStruct());
 
+			await Task.Delay(DelayBetweenClicks);
+
 			// Assert
 			eventQueue.Count.ShouldBe(1, string.Join(Environment.NewLine, eventQueue));
 			var mouseParameter = eventQueue.Dequeue();
@@ -101,7 +110,7 @@ namespace BK.Plugins.MouseHook.Tests
 		}
 
 		[Test]
-		public void MouseClickDelegateImpl_Mouse5DoubleClick()
+		public async Task MouseClickDelegateImpl_Mouse5DoubleClick()
 		{
 			// Arrange
 			using var hook = Setup().hook;
@@ -115,26 +124,13 @@ namespace BK.Plugins.MouseHook.Tests
 			hook.MouseClickDelegateImpl(MouseHookType.WM_XBUTTONDOWN, HookStruct());
 			hook.MouseClickDelegateImpl(MouseHookType.WM_XBUTTONUP, HookStruct());
 
+			await Task.Delay(DelayBetweenClicks);
+
 			// Assert
 			eventQueue.Count.ShouldBe(1, string.Join(Environment.NewLine, eventQueue));
 			var mouseParameter = eventQueue.Dequeue();
 			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.Mouse5 | MouseInfo.Down);
 		}
 
-		private (MouseHook hook, IMock<IUser32> userMock) Setup()
-		{
-			var userMock = new Mock<IUser32>();
-
-			userMock.Setup(m => m.GetDoubleClickTime())
-				.Returns(_doubleClickTicks);
-
-			userMock.Setup(m => m.GetSystemMetrics(It.IsAny<SystemMetric>()))
-				.Returns(_doubleClickDiameter);
-
-			var hook = new MouseHook(userMock.Object);
-			return (hook, userMock);
-		}
-
 	}
-
 }

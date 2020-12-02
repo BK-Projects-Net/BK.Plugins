@@ -121,7 +121,7 @@ namespace BK.Plugins.MouseHook
 			return _user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
 		}
 
-		private MSLLHOOKSTRUCT _last;
+		private LowLevelMouseInfo _last;
 		internal void MouseClickDelegateImpl(MouseHookType type, MSLLHOOKSTRUCT mouseHookStruct)
 		{
 			var time = mouseHookStruct.time;
@@ -140,14 +140,14 @@ namespace BK.Plugins.MouseHook
 			else
 			{
 				// double click
-				if (mouseHookStruct.time - _last.time < DoubleClickTicks &&
-				    Math.Abs(_last.pt.X - point.X) < DoubleClickWidth &&
-				    Math.Abs(_last.pt.Y - point.Y) < DoubleClickHeight)
+				var last = _last.HookStruct;
+				if (mouseHookStruct.time - last.time < DoubleClickTicks 
+					&& _last.Type == type
+				    && Math.Abs(last.pt.X - point.X) < DoubleClickWidth 
+				    && Math.Abs(last.pt.Y - point.Y) < DoubleClickHeight)
 				{
 					_timer.Stop();
-
-					// we dont want to invoke a double click for MouseUp
-					if (IsDown(type)) InvokeDoubleClickHandler(info, parameter.ToDoubleClick());
+					InvokeDoubleClickHandler(info, parameter.ToDoubleClick());
 				}
 				else // single click
 				{
@@ -157,7 +157,7 @@ namespace BK.Plugins.MouseHook
 				}
 
 				if (IsDown(type))
-					_last = mouseHookStruct;
+					_last = new LowLevelMouseInfo(type, mouseHookStruct, parameter);
 			}
 
 			// ThreadPool.QueueUserWorkItem(_ => _buffer.Enqueue(in mouseTuple));
