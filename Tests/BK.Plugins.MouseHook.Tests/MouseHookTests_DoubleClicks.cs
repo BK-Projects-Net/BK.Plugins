@@ -37,7 +37,7 @@ namespace BK.Plugins.MouseHook.Tests
 			// Assert
 			eventQueue.Count.ShouldBe(1, string.Join(Environment.NewLine, eventQueue));
 			var mouseParameter = eventQueue.Dequeue();
-			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.LeftButton | MouseInfo.Down);
+			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.LeftButton);
 		}
 
 		[Test]
@@ -60,7 +60,7 @@ namespace BK.Plugins.MouseHook.Tests
 			// Assert
 			eventQueue.Count.ShouldBe(1, string.Join(Environment.NewLine, eventQueue));
 			var mouseParameter = eventQueue.Dequeue();
-			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.MiddleButton | MouseInfo.Down);
+			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.MiddleButton);
 		}
 
 		[Test]
@@ -83,7 +83,7 @@ namespace BK.Plugins.MouseHook.Tests
 			// Assert
 			eventQueue.Count.ShouldBe(1, string.Join(Environment.NewLine, eventQueue));
 			var mouseParameter = eventQueue.Dequeue();
-			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.RightButton | MouseInfo.Down);
+			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.RightButton);
 		}
 
 		[Test]
@@ -106,7 +106,7 @@ namespace BK.Plugins.MouseHook.Tests
 			// Assert
 			eventQueue.Count.ShouldBe(1, string.Join(Environment.NewLine, eventQueue));
 			var mouseParameter = eventQueue.Dequeue();
-			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.Mouse4 | MouseInfo.Down);
+			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.Mouse4);
 		}
 
 		[Test]
@@ -129,7 +129,7 @@ namespace BK.Plugins.MouseHook.Tests
 			// Assert
 			eventQueue.Count.ShouldBe(1, string.Join(Environment.NewLine, eventQueue));
 			var mouseParameter = eventQueue.Dequeue();
-			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.Mouse5 | MouseInfo.Down);
+			mouseParameter.MouseInfo.ShouldHaveFlag(MouseInfo.Double | MouseInfo.Mouse5);
 		}
 
 	}

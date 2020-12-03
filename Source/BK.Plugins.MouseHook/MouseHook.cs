@@ -129,8 +129,9 @@ namespace BK.Plugins.MouseHook
 			return _user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
 		}
 
+		private int _clickCount = 0;
 		private LowLevelMouseInfo _last;
-		private ConcurrentQueue<LowLevelMouseInfo> _capturedMouseClicks = new ConcurrentQueue<LowLevelMouseInfo>();
+		private readonly ConcurrentQueue<LowLevelMouseInfo> _capturedMouseClicks = new ConcurrentQueue<LowLevelMouseInfo>();
 		internal void MouseClickDelegateImpl(MouseHookType type, MSLLHOOKSTRUCT mouseHookStruct)
 		{
 			var time = mouseHookStruct.time;
@@ -148,15 +149,17 @@ namespace BK.Plugins.MouseHook
 			}
 			else
 			{
+				_clickCount++;
 				// double click
 				var last = _last.HookStruct;
-				if (mouseHookStruct.time - last.time < DoubleClickTicks 
-					&& _last.Type == type
+				if ( _clickCount == 4
+				    && mouseHookStruct.time - last.time < DoubleClickTicks
 				    && Math.Abs(last.pt.X - point.X) < DoubleClickWidth 
 				    && Math.Abs(last.pt.Y - point.Y) < DoubleClickHeight)
 				{
 					_timerPool.Stop();
 					InvokeDoubleClickHandler(info, parameter.ToDoubleClick());
+					_clickCount = 0;
 				}
 				else // single click
 				{
