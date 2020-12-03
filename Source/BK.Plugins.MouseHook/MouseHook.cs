@@ -1,14 +1,18 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Security.Policy;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
 using System.Windows.Threading;
 using BK.Plugins.MouseHook.Core;
 using BK.Plugins.PInvoke;
 using BK.Plugins.PInvoke.Core;
+using Timer = System.Timers.Timer;
 
 // https://stackoverflow.com/questions/50055814/how-to-detect-double-click-tap-when-handling-wm-pointer-message/50057917#50057917
 // https://devblogs.microsoft.com/oldnewthing/20041018-00/?p=37543
@@ -23,8 +27,8 @@ namespace BK.Plugins.MouseHook
 		private User32.HookProc _mouseHookProc;
 		private GCHandle _mouseHookProcHandle;	// used to pin an instance to not get GC // has to be released
 		private IntPtr _mouseHook = IntPtr.Zero;
-		private System.Timers.Timer _timer;
-		private LowLevelMouseInfo _capturedMouseClick;
+		private TimerPool _timerPool;
+		//private LowLevelMouseInfo _capturedMouseClick;
 
 		private int? _doubleClickTicks;
 		private int? _doubleClickWidth;
@@ -55,8 +59,12 @@ namespace BK.Plugins.MouseHook
 
 		private void Init()
 		{
-			_timer = new System.Timers.Timer { AutoReset = false, Interval = DoubleClickTicks };
-			_timer.Elapsed += (sender, args) => ElapsedSingleClickThreshold(sender, args, in _capturedMouseClick);
+			_timerPool = new TimerPool(false, DoubleClickTicks);
+			_timerPool.Elapsed += (sender, args) =>
+			{
+				if(_capturedMouseClicks.TryDequeue(out var click))
+					ElapsedSingleClickThreshold(sender, args, in click);
+			};
 		}
 
 		#region Events
@@ -122,6 +130,7 @@ namespace BK.Plugins.MouseHook
 		}
 
 		private LowLevelMouseInfo _last;
+		private ConcurrentQueue<LowLevelMouseInfo> _capturedMouseClicks = new ConcurrentQueue<LowLevelMouseInfo>();
 		internal void MouseClickDelegateImpl(MouseHookType type, MSLLHOOKSTRUCT mouseHookStruct)
 		{
 			var time = mouseHookStruct.time;
@@ -146,13 +155,13 @@ namespace BK.Plugins.MouseHook
 				    && Math.Abs(last.pt.X - point.X) < DoubleClickWidth 
 				    && Math.Abs(last.pt.Y - point.Y) < DoubleClickHeight)
 				{
-					_timer.Stop();
+					_timerPool.Stop();
 					InvokeDoubleClickHandler(info, parameter.ToDoubleClick());
 				}
 				else // single click
 				{
-					_capturedMouseClick = new LowLevelMouseInfo(type, mouseHookStruct, parameter);
-					_timer.Start();
+					_capturedMouseClicks.Enqueue(new LowLevelMouseInfo(type, mouseHookStruct, parameter));
+					_timerPool.Start();
 
 				}
 
@@ -251,6 +260,56 @@ namespace BK.Plugins.MouseHook
 		{
 			if (!IsHooked) return;
 			UnHook();
+		}
+	}
+
+	internal class TimerPool : IDisposable
+	{
+		private readonly List<Timer> _timers = new List<Timer>();
+		private readonly bool _autoReset;
+		private readonly int _interval;
+
+		public TimerPool(bool autoReset, int interval)
+		{
+			_autoReset = autoReset;
+			_interval = interval;
+		}
+		
+		public event ElapsedEventHandler Elapsed;
+
+		public void Start()
+		{
+			var timer = _timers.Find(t => !t.Enabled);
+			if (timer != null)
+			{
+				timer.Start();
+			}
+			else
+			{
+				var t = new Timer(_interval);
+				t.Elapsed += Elapsed;
+				t.AutoReset = _autoReset;
+				t.Start();
+				_timers.Add(t);
+			}
+		}
+
+		public void Stop()
+		{
+			foreach (var timer in _timers)
+			{
+				timer.Stop();
+			}
+		}
+
+		public void Dispose()
+		{
+			foreach (var timer in _timers)
+			{
+				timer.Stop();
+				timer.Elapsed -= Elapsed;
+				timer.Dispose();
+			}
 		}
 	}
 }
