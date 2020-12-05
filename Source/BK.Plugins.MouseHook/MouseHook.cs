@@ -62,6 +62,7 @@ namespace BK.Plugins.MouseHook
 			_timerPool = new TimerPool(false, DoubleClickTicks);
 			_timerPool.Elapsed += (sender, args) =>
 			{
+				Interlocked.Exchange(ref _clickCount, 0);
 				if(_capturedMouseClicks.TryDequeue(out var click))
 					ElapsedSingleClickThreshold(sender, args, in click);
 			};
@@ -131,7 +132,7 @@ namespace BK.Plugins.MouseHook
 
 		private int _clickCount = 0;
 		private LowLevelMouseInfo _last;
-		private readonly ConcurrentQueue<LowLevelMouseInfo> _capturedMouseClicks = new ConcurrentQueue<LowLevelMouseInfo>();
+		private ConcurrentQueue<LowLevelMouseInfo> _capturedMouseClicks = new ConcurrentQueue<LowLevelMouseInfo>();
 		internal void MouseClickDelegateImpl(MouseHookType type, MSLLHOOKSTRUCT mouseHookStruct)
 		{
 			var time = mouseHookStruct.time;
@@ -158,6 +159,7 @@ namespace BK.Plugins.MouseHook
 				    && Math.Abs(last.pt.Y - point.Y) < DoubleClickHeight)
 				{
 					_timerPool.Stop();
+					_capturedMouseClicks = new ConcurrentQueue<LowLevelMouseInfo>();
 					InvokeDoubleClickHandler(info, parameter.ToDoubleClick());
 					_clickCount = 0;
 				}
