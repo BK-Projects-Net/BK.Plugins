@@ -28,7 +28,7 @@ namespace BK.Plugins.MouseHook
 		private GCHandle _mouseHookProcHandle;	// used to pin an instance to not get GC // has to be released
 		private IntPtr _mouseHook = IntPtr.Zero;
 		private TimerPool _timerPool;
-		//private LowLevelMouseInfo _capturedMouseClick;
+		private readonly SynchronizationContext _syncContext = SynchronizationContext.Current;
 
 		private int? _doubleClickTicks;
 		private int? _doubleClickWidth;
@@ -45,28 +45,27 @@ namespace BK.Plugins.MouseHook
 
 		public MouseHook()
 		{
-			Init();
+			_timerPool = new TimerPool(false, DoubleClickTicks);
+			_timerPool.Elapsed += (sender, args) =>
+			{
+				Interlocked.Exchange(ref _clickCount, 0);
+				if (!_capturedMouseClicks.TryDequeue(out var click)) return;
+
+				if (_syncContext != null)
+					_syncContext.Send(state => ElapsedSingleClickThreshold(sender, args, in click), null);
+				else
+				{
+					ElapsedSingleClickThreshold(sender, args, in click);
+				}
+
+			};
 		}
 
 		/// <summary>
 		/// Used for testing
 		/// </summary>
-		internal MouseHook(IUser32 user32)
-		{
-			_user32 = user32;
-			Init();
-		}
+		internal MouseHook(IUser32 user32) : this() => _user32 = user32;
 
-		private void Init()
-		{
-			_timerPool = new TimerPool(false, DoubleClickTicks);
-			_timerPool.Elapsed += (sender, args) =>
-			{
-				Interlocked.Exchange(ref _clickCount, 0);
-				if(_capturedMouseClicks.TryDequeue(out var click))
-					ElapsedSingleClickThreshold(sender, args, in click);
-			};
-		}
 
 		#region Events
 		public event EventHandler<MouseParameter> MoveEvent;
