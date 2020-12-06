@@ -11,6 +11,7 @@ namespace BK.Plugins.MouseHook.Tests.TestData
 	{
 		internal static MSLLHOOKSTRUCT GetMouse4() => new MSLLHOOKSTRUCT {time = (int) DateTime.Now.Ticks, mouseData = 0x010000 };
 		internal static MSLLHOOKSTRUCT GetMouse5() => new MSLLHOOKSTRUCT {time = (int) DateTime.Now.Ticks, mouseData = 0x020000};
-
+		internal static MSLLHOOKSTRUCT GetWheelUp() => new MSLLHOOKSTRUCT {time = (int) DateTime.Now.Ticks, mouseData = 1};
+		internal static MSLLHOOKSTRUCT GetWheelDown() => new MSLLHOOKSTRUCT {time = (int) DateTime.Now.Ticks, mouseData = -1};
 	}
 }
