@@ -24,8 +24,7 @@
   
   <!-- package refs -->
   <ItemGroup>
-    <PackageReference Include="System.Reactive" Version="4.4.1" />
-    <PackageReference Include="NuGet.Build.Tasks.Pack" Version="5.2.0" />
+    <PackageReference Include="NuGet.Build.Tasks.Pack" Version="5.2.0" PrivateAssets="all"/>
   </ItemGroup>
 
   <!-- project refs -->
