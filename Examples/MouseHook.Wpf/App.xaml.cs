@@ -1,13 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Reactive.Concurrency;
-using System.Threading.Tasks;
-using System.Windows;
-using BK.Plugins.MouseHook.Core;
-using BK.Plugins.MouseHookRx;
+﻿using System.Windows;
 
 namespace MouseHook.Wpf
 {
@@ -23,23 +14,8 @@ namespace MouseHook.Wpf
 			MainWindow = new MainWindow();
 			MainWindow.Show();
 
-			//UsingRxHook();
-			
-		
+
 		}
 
-		private void UsingRxHook()
-		{
-			var hook = new BK.Plugins.MouseHookRx.MouseHookRx();
-			hook.LDownEvent += HookOnLDownEvent;
-			hook.SubscribeOnScheduler = new DispatcherScheduler(Dispatcher);
-			hook.ObserveOnScheduler = new DispatcherScheduler(Dispatcher);
-			hook.SetHook();
-		}
-
-		private void HookOnLDownEvent(object sender, MouseParameter e)
-		{
-			
-		}
 	}
 }

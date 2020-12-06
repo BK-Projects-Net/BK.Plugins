@@ -18,8 +18,6 @@ namespace BK.Plugins.MouseHook.Core
 
 	internal class MouseInfoFactory
 	{
-		
-
 		internal MouseInfo Create(MouseHookType hookType, MSLLHOOKSTRUCT hookStruct)
 		{
 			MouseInfo result;

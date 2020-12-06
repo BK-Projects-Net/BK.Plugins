@@ -17,6 +17,26 @@ namespace BK.Plugins.MouseHook.Core
 			Guid = guid;
 		}
 
+		public MouseParameter(MouseInfo info, MousePoint point, int ticks)
+		{
+			MouseInfo = info;
+			Position = point;
+			DateTime = DateTime.Today + TimeSpan.FromTicks(ticks);
+			Guid = Guid.NewGuid();
+		}
+
+		public MouseParameter(MouseInfo info, MousePoint point, int ticks, bool hasDoubleClick)
+		{
+			MouseInfo = info;
+			Position = point;
+			DateTime = DateTime.Today + TimeSpan.FromTicks(ticks);
+			Guid = Guid.NewGuid();
+			if (hasDoubleClick)
+			{
+				MouseInfo |= MouseInfo.Double;
+			}
+		}
+
 		internal MouseParameter ToDoubleClick()
 		{
 			var info = MouseInfo;
@@ -32,13 +52,5 @@ namespace BK.Plugins.MouseHook.Core
 
 		public bool Is(MouseInfo info) => (MouseInfo & info) != 0;
 
-		public readonly struct Factory
-		{
-			public static MouseParameter Create(MouseInfo info, MousePoint point, int ticks) => 
-				new MouseParameter(info, point, DateTime.Today + TimeSpan.FromTicks(ticks), Guid.NewGuid());
-			
-			public static MouseParameter CreateHasDoubleClick(MouseInfo info, MousePoint point, int ticks) =>
-				new MouseParameter(info | MouseInfo.Double, point, DateTime.Today + TimeSpan.FromTicks(ticks), Guid.NewGuid());
-		}
 	}
 }

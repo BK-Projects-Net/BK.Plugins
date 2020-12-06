@@ -51,10 +51,6 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Source\BK.Plugins.MouseHookRx\BK.Plugins.MouseHookRx.csproj">
-      <Project>{E21C9F3A-CB95-43EA-99AE-80D77685E1BD}</Project>
-      <Name>BK.Plugins.MouseHookRx</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\Source\BK.Plugins.MouseHook\BK.Plugins.MouseHook.csproj">
       <Project>{bf0f14e7-6907-49a9-bf01-75dbe2de584f}</Project>
       <Name>BK.Plugins.MouseHook</Name>

@@ -1,7 +1,6 @@
 ﻿using System;
 using BK.Plugins.MouseHook.Core;
 using System.Windows.Forms;
-using BK.Plugins.MouseHookRx;
 
 // https://docs.microsoft.com/en-us/dotnet/api/system.windows.forms.application.run?view=netcore-3.1#System_Windows_Forms_Application_Run_System_Windows_Forms_ApplicationContext_
 
@@ -28,12 +27,7 @@ namespace MouseHook.ConsoleApp
 
 			var time = hook.DoubleClickTicks;
 			HookAllEventHandlers(hook);
-			// HookObservable(hook);
 		}
-
-		private void HookObservable(MouseHookRx hookRx) => 
-			hookRx.MouseObservable
-				.Subscribe(param => Console.WriteLine(param));
 
 		private void HookAllEventHandlers(BK.Plugins.MouseHook.MouseHook hookRx)
 		{

@@ -1,18 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Security.Policy;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Timers;
-using System.Windows.Threading;
 using BK.Plugins.MouseHook.Core;
 using BK.Plugins.PInvoke;
 using BK.Plugins.PInvoke.Core;
-using Timer = System.Timers.Timer;
 
 // https://stackoverflow.com/questions/50055814/how-to-detect-double-click-tap-when-handling-wm-pointer-message/50057917#50057917
 // https://devblogs.microsoft.com/oldnewthing/20041018-00/?p=37543
@@ -23,25 +16,27 @@ namespace BK.Plugins.MouseHook
 	{
 		private readonly IUser32 _user32 = new User32();
 		private readonly MouseInfoFactory _mouseInfoFactory = new MouseInfoFactory();
+		private readonly TimerPool _timerPool;
+		private readonly SynchronizationContext _syncContext = SynchronizationContext.Current;
 
 		private User32.HookProc _mouseHookProc;
-		private GCHandle _mouseHookProcHandle;	// used to pin an instance to not get GC // has to be released
+		private GCHandle _mouseHookProcHandle;	// used to pin the registered delegate // this has to be freed
 		private IntPtr _mouseHook = IntPtr.Zero;
-		private TimerPool _timerPool;
-		private readonly SynchronizationContext _syncContext = SynchronizationContext.Current;
+
+		private int _clickCount = 0;
+		private LowLevelMouseInfo _last;
+		private ConcurrentQueue<LowLevelMouseInfo> _capturedMouseClicks = new ConcurrentQueue<LowLevelMouseInfo>();
 
 		private int? _doubleClickTicks;
 		private int? _doubleClickWidth;
 		private int? _doubleClickHeight;
 
+		// lazily invoking and caching the result of the pinvoked methods
 		public int DoubleClickTicks => _doubleClickTicks ??= (int)_user32.GetDoubleClickTime();
 		public int DoubleClickWidth => _doubleClickWidth ??= _user32.GetSystemMetrics(SystemMetric.SM_CXDOUBLECLK);
 		public int DoubleClickHeight => _doubleClickHeight ??= _user32.GetSystemMetrics(SystemMetric.SM_CYDOUBLECLK);
 
 		public bool IsHooked { get; protected set; }
-
-		private void ElapsedSingleClickThreshold(object sender, ElapsedEventArgs args, in LowLevelMouseInfo capturedMouseClick) => 
-			InvokeHandler(capturedMouseClick.Type, sender, capturedMouseClick.MouseParameter);
 
 		public MouseHook()
 		{
@@ -52,7 +47,9 @@ namespace BK.Plugins.MouseHook
 				if (!_capturedMouseClicks.TryDequeue(out var click)) return;
 
 				if (_syncContext != null)
+				{
 					_syncContext.Send(state => ElapsedSingleClickThreshold(sender, args, in click), null);
+				}
 				else
 				{
 					ElapsedSingleClickThreshold(sender, args, in click);
@@ -118,34 +115,32 @@ namespace BK.Plugins.MouseHook
 			return success;
 		}
 
-		// this delgate has to be quickly returned and all events have to be invoked on the dispatcher when one exists
-		private IntPtr MouseClickDelegate(int code, IntPtr wparam, IntPtr lparam)
+		// this delegate has to be quickly returned as otherwise the thread will be blocked
+		private unsafe IntPtr MouseClickDelegate(int code, IntPtr wparam, IntPtr lparam)
 		{
-			var hookType = (MouseHookType)wparam; 
-			var mouseHookStruct = (MSLLHOOKSTRUCT) Marshal.PtrToStructure(lparam, typeof(MSLLHOOKSTRUCT));
+			var hookType = (MouseHookType)wparam;
+			var mouseHookStruct = *(MSLLHOOKSTRUCT*)lparam;
 			
 			MouseClickDelegateImpl(hookType, mouseHookStruct);
 
 			return _user32.CallNextHookEx(_mouseHook, code, wparam, lparam);
 		}
 
-		private int _clickCount = 0;
-		private LowLevelMouseInfo _last;
-		private ConcurrentQueue<LowLevelMouseInfo> _capturedMouseClicks = new ConcurrentQueue<LowLevelMouseInfo>();
+		
 		internal void MouseClickDelegateImpl(MouseHookType type, MSLLHOOKSTRUCT mouseHookStruct)
 		{
 			var time = mouseHookStruct.time;
 			var point = new MousePoint(mouseHookStruct.pt.X, mouseHookStruct.pt.Y);
 			var info = _mouseInfoFactory.Create(type, mouseHookStruct);
-			var parameter = MouseParameter.Factory.Create(info, point, time);
+			var parameter = new MouseParameter(info, point, time);
 
 			if (type == MouseHookType.WM_MOUSEMOVE)
 			{
-				Invoke(MoveEvent, this, parameter);
+				Invoke(MoveEvent, this, in parameter);
 			}
 			else if (type == MouseHookType.WM_MOUSEWHEEL)
 			{
-				Invoke(WheelEvent, this, parameter);
+				Invoke(WheelEvent, this, in parameter);
 			}
 			else
 			{
@@ -159,35 +154,27 @@ namespace BK.Plugins.MouseHook
 				{
 					_timerPool.Stop();
 					_capturedMouseClicks = new ConcurrentQueue<LowLevelMouseInfo>();
-					InvokeDoubleClickHandler(info, parameter.ToDoubleClick());
+					var mouseParameter = parameter.ToDoubleClick();
+					InvokeDoubleClickHandler(info, in mouseParameter);
 					_clickCount = 0;
 				}
 				else // single click
 				{
 					_capturedMouseClicks.Enqueue(new LowLevelMouseInfo(type, mouseHookStruct, parameter));
 					_timerPool.Start();
-
 				}
 
 				if (IsDown(type))
 					_last = new LowLevelMouseInfo(type, mouseHookStruct, parameter);
 			}
-
-			// ThreadPool.QueueUserWorkItem(_ => _buffer.Enqueue(in mouseTuple));
-			// MouseClickDelegateOverride(mouseTuple, parameter);
-			
 		}
+
+		private void ElapsedSingleClickThreshold(object sender, ElapsedEventArgs args, in LowLevelMouseInfo capturedMouseClick) =>
+			InvokeHandler(capturedMouseClick.Type, sender, in capturedMouseClick.MouseParameter);
 
 		private bool IsDown(MouseHookType type) =>
 			type == MouseHookType.WM_LBUTTONDOWN || type == MouseHookType.WM_MBUTTONDOWN ||
 			type == MouseHookType.WM_RBUTTONDOWN || type == MouseHookType.WM_XBUTTONDOWN;
-
-		/// <summary>
-		/// do not call the base implementation when overriding this
-		/// otherwise the events will be invoked 2 times for the concretion
-		/// </summary>
-		internal virtual void MouseClickDelegateOverride(in LowLevelMouseInfo info, in MouseParameter parameter) =>
-			InvokeHandler(info.Type,this, parameter);
 
 		protected void InvokeHandler(MouseHookType key, object sender, in MouseParameter parameter)
 		{
@@ -252,9 +239,9 @@ namespace BK.Plugins.MouseHook
 				InvokeUnhandled(this, parameter);
 		}
 
-		protected void InvokeUnhandled(object sender, MouseParameter parameter) => Invoke(UnhandledEvent, sender, parameter);
+		protected void InvokeUnhandled(object sender, in MouseParameter parameter) => Invoke(UnhandledEvent, sender, parameter);
 
-		protected virtual void Invoke(EventHandler<MouseParameter> handler, object sender, MouseParameter param, Dispatcher dispatcher = null)
+		protected virtual void Invoke(EventHandler<MouseParameter> handler, object sender, in MouseParameter param)
 		{
 			handler?.Invoke(sender, param);
 			GlobalEvent?.Invoke(sender, param);
@@ -264,56 +251,7 @@ namespace BK.Plugins.MouseHook
 		{
 			if (!IsHooked) return;
 			UnHook();
-		}
-	}
-
-	internal class TimerPool : IDisposable
-	{
-		private readonly List<Timer> _timers = new List<Timer>();
-		private readonly bool _autoReset;
-		private readonly int _interval;
-
-		public TimerPool(bool autoReset, int interval)
-		{
-			_autoReset = autoReset;
-			_interval = interval;
-		}
-		
-		public event ElapsedEventHandler Elapsed;
-
-		public void Start()
-		{
-			var timer = _timers.Find(t => !t.Enabled);
-			if (timer != null)
-			{
-				timer.Start();
-			}
-			else
-			{
-				var t = new Timer(_interval);
-				t.Elapsed += Elapsed;
-				t.AutoReset = _autoReset;
-				t.Start();
-				_timers.Add(t);
-			}
-		}
-
-		public void Stop()
-		{
-			foreach (var timer in _timers)
-			{
-				timer.Stop();
-			}
-		}
-
-		public void Dispose()
-		{
-			foreach (var timer in _timers)
-			{
-				timer.Stop();
-				timer.Elapsed -= Elapsed;
-				timer.Dispose();
-			}
+			_timerPool.Dispose();
 		}
 	}
 }
